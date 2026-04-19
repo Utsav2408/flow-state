@@ -71,6 +71,9 @@ const Toast = ({ message, visible }) => (
   </div>
 );
 
+// Browser / GPU canvas backing-store limits — keeps resize loops from allocating absurd bitmaps
+const MAX_CANVAS_CSS_PX = 4096;
+
 // ─── Operator Venue Map Canvas ─────────────────────────────────────────────
 const OperatorMapCanvas = ({ zones, stands }) => {
   const containerRef = useRef(null);
@@ -121,8 +124,8 @@ const OperatorMapCanvas = ({ zones, stands }) => {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    const cssW = Math.max(1, Math.floor(rect.width));
-    const cssH = Math.max(1, Math.floor(rect.height));
+    const cssW = Math.min(MAX_CANVAS_CSS_PX, Math.max(1, Math.floor(rect.width)));
+    const cssH = Math.min(MAX_CANVAS_CSS_PX, Math.max(1, Math.floor(rect.height)));
     canvas.style.width = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
     canvas.width = Math.floor(cssW * dpr);
@@ -328,8 +331,26 @@ const OperatorMapCanvas = ({ zones, stands }) => {
   }, [draw]);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: 340, position: 'relative' }}>
-      <canvas ref={canvasRef} style={{ display: 'block' }} />
+    <div
+      ref={containerRef}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        overflow: 'hidden',
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: 'block',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+        }}
+      />
       {activeRoute && (
         <div style={{
           position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
@@ -909,7 +930,9 @@ export const OperatorPage = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      maxHeight: '100vh',
+      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       background: '#F1F5F9',
@@ -986,7 +1009,8 @@ export const OperatorPage = () => {
           padding: '20px 16px 20px 20px',
           minWidth: 0,
           minHeight: 0,
-          overflow: 'hidden',
+          overflowX: 'hidden',
+          overflowY: 'auto',
         }}>
           {/* Stats Row */}
           <div style={{
@@ -1020,16 +1044,24 @@ export const OperatorPage = () => {
             />
           </div>
 
-          {/* Map — minHeight: 0 lets this flex child participate in flex shrink (same idea as Tailwind min-h-0) */}
+          {/* Map: column flex + bounded paint area so canvas height:100% resolves and cannot stretch the page */}
           <div style={{
             flex: 1,
             minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
             background: '#fff',
             borderRadius: 16,
             boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
             overflow: 'hidden',
           }}>
-            <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{
+              padding: '12px 16px 8px',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                 Venue Heatmap
               </span>
@@ -1046,7 +1078,9 @@ export const OperatorPage = () => {
                 ))}
               </div>
             </div>
-            <OperatorMapCanvas zones={zones} stands={stands} />
+            <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+              <OperatorMapCanvas zones={zones} stands={stands} />
+            </div>
           </div>
 
           {/* Alert Feed */}
