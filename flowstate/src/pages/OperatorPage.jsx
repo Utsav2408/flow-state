@@ -121,14 +121,18 @@ const OperatorMapCanvas = ({ zones, stands }) => {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    const cssW = Math.max(1, Math.floor(rect.width));
+    const cssH = Math.max(1, Math.floor(rect.height));
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    canvas.width = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
     ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.clearRect(0, 0, cssW, cssH);
 
-    const scale = Math.min(rect.width / logicalW, rect.height / logicalH) * 0.95;
-    const ox = (rect.width - logicalW * scale) / 2;
-    const oy = (rect.height - logicalH * scale) / 2;
+    const scale = Math.min(cssW / logicalW, cssH / logicalH) * 0.95;
+    const ox = (cssW - logicalW * scale) / 2;
+    const oy = (cssH - logicalH * scale) / 2;
 
     ctx.save();
     ctx.translate(ox, oy);
@@ -325,7 +329,7 @@ const OperatorMapCanvas = ({ zones, stands }) => {
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: 340, position: 'relative' }}>
-      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
+      <canvas ref={canvasRef} style={{ display: 'block' }} />
       {activeRoute && (
         <div style={{
           position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
@@ -981,6 +985,7 @@ export const OperatorPage = () => {
           gap: 16,
           padding: '20px 16px 20px 20px',
           minWidth: 0,
+          minHeight: 0,
           overflow: 'hidden',
         }}>
           {/* Stats Row */}
@@ -1015,14 +1020,14 @@ export const OperatorPage = () => {
             />
           </div>
 
-          {/* Map */}
+          {/* Map — minHeight: 0 lets this flex child participate in flex shrink (same idea as Tailwind min-h-0) */}
           <div style={{
             flex: 1,
+            minHeight: 0,
             background: '#fff',
             borderRadius: 16,
             boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
             overflow: 'hidden',
-            minHeight: 300,
           }}>
             <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
