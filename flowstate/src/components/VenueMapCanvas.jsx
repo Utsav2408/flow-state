@@ -15,6 +15,7 @@ export const VenueMapCanvas = ({
   filters,
   disableInteraction = false,
   showMeetupCentroid = false,
+  customMeetupPoint = null,
 }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -51,11 +52,12 @@ export const VenueMapCanvas = ({
   );
 
   const meetupCentroid = useMemo(() => {
+    if (customMeetupPoint) return customMeetupPoint;
     if (!showMeetupCentroid || !groupMembers.length) return null;
     const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
     const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
     return { x: sx, y: sy };
-  }, [groupMembers, showMeetupCentroid]);
+  }, [groupMembers, showMeetupCentroid, customMeetupPoint]);
 
   useEffect(() => {
     const animate = () => {

@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/Shared';
 import { VenueMapCanvas } from '../components/VenueMapCanvas';
 import { Toast } from '../components/Toast';
 import { useStore } from '../store/useStore';
-import { LOGICAL_MAP, getClosestStandToPoint } from '../models/venueLayout';
+import { LOGICAL_MAP, getClosestStandToPoint, ZONE_GROUPS } from '../models/venueLayout';
 import { ChevronLeft, Check } from 'lucide-react';
 
 function pickStandForGroup(stands, members) {
@@ -22,6 +22,34 @@ export const GroupPage = () => {
   const groupMembers = useStore((s) => s.groupMembers);
   const [toast, setToast] = useState(null);
   const [pingSent, setPingSent] = useState(false);
+
+  const meetupSuggestion = useMemo(() => {
+    if (!groupMembers?.length) {
+      return { 
+        title: 'Section B4, nearest junction', 
+        point: { x: LOGICAL_MAP.cx + 220, y: LOGICAL_MAP.cy - 100 } 
+      };
+    }
+    
+    const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
+    const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
+
+    let closestZone = ZONE_GROUPS[0];
+    let minD = Infinity;
+
+    for (const z of ZONE_GROUPS) {
+      const d = Math.hypot(z.x - sx, z.y - sy);
+      if (d < minD) {
+        minD = d;
+        closestZone = z;
+      }
+    }
+
+    return {
+      title: `Section ${closestZone.alias[0]}, nearest junction`,
+      point: { x: closestZone.x, y: closestZone.y }
+    };
+  }, [groupMembers]);
 
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -56,6 +84,7 @@ export const GroupPage = () => {
             <VenueMapCanvas
               filters={{ density: true, food: true, exits: false, group: true }}
               showMeetupCentroid
+              customMeetupPoint={meetupSuggestion.point}
             />
         </div>
 
@@ -71,7 +100,7 @@ export const GroupPage = () => {
         <div className="rounded-2xl p-4 bg-white border border-blue-200 shadow-sm relative overflow-hidden mb-6">
            <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
            <p className="text-[10px] font-bold text-blue-500 tracking-wider uppercase text-center mt-1">Smart Meetup Suggestion</p>
-           <h4 className="text-base font-bold text-gray-900 text-center mt-1">Section B4, Aisle 3 junction</h4>
+           <h4 className="text-base font-bold text-gray-900 text-center mt-1">{meetupSuggestion.title}</h4>
            <p className="text-xs font-medium text-gray-600 text-center mt-2 leading-relaxed">Optimal for all 4 members. Low crowd density right now. Avg walk: 45 seconds.</p>
            <button
              type="button"
