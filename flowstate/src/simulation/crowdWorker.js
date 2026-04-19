@@ -3,7 +3,6 @@ import {
   ZONE_TARGETS,
   STAND_LAYOUT,
   GATES_LAYOUT,
-  getClosestStandToPoint,
 } from '../models/venueLayout';
 
 const NUM_FANS = 40000;
