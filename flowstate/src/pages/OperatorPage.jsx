@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import { db, ref, set } from '../firebase';
 import { startSimulation, triggerEvent, getSimStats } from '../simulation/crowdSimulator';
 import { requestRoute, getNashStats } from '../intelligence/routingEngine';
-import { getComfortScore, getComfortColor } from '../intelligence/comfortScoring';
+import { getComfortColor } from '../intelligence/comfortScoring';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const BASELINE_WAIT = 5.5; // minutes
@@ -681,31 +681,14 @@ export const OperatorPage = () => {
   const [demoRouteLoading, setDemoRouteLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false });
   const [flashBtn, setFlashBtn] = useState(null);
-  const sessionStartRef = useRef(Date.now());
   const prevAvgWaitRef = useRef(null);
   const nashAlertCooldownRef = useRef(0);
   const comfortAlertCooldownRef = useRef({});
 
-  // Auto-start at 5x on mount
-  useEffect(() => {
-    startSimulation();
-    updateSimSpeed(5);
-  }, []);
-
-  // Live polling
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const s = getSimStats();
-      setStats(s);
-      setSimTimeSecs(prev => prev + (0.1 * speed));
-      generateAlerts();
-    }, 100);
-    return () => clearInterval(interval);
-  }, [speed, zones, stands]);
-
-  const showToast = useCallback((msg) => {
-    setToast({ message: msg, visible: true });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2200);
+  const updateSimSpeed = useCallback((spd) => {
+    setSpeed(spd);
+    useStore.getState().setSimState({ speed: spd });
+    if (db) set(ref(db, 'simulation/speed'), spd).catch(() => {});
   }, []);
 
   const generateAlerts = useCallback(() => {
@@ -791,11 +774,27 @@ export const OperatorPage = () => {
     }
   }, [zones, stands]);
 
-  const updateSimSpeed = (spd) => {
-    setSpeed(spd);
-    useStore.getState().setSimState({ speed: spd });
-    if (db) set(ref(db, 'simulation/speed'), spd).catch(() => {});
-  };
+  const showToast = useCallback((msg) => {
+    setToast({ message: msg, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2200);
+  }, []);
+
+  // Auto-start at 5x on mount
+  useEffect(() => {
+    startSimulation();
+    queueMicrotask(() => updateSimSpeed(5));
+  }, [updateSimSpeed]);
+
+  // Live polling
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const s = getSimStats();
+      setStats(s);
+      setSimTimeSecs((prev) => prev + 0.1 * speed);
+      generateAlerts();
+    }, 100);
+    return () => clearInterval(interval);
+  }, [speed, generateAlerts]);
 
   const handleTriggerEvent = (event) => {
     triggerEvent(event);

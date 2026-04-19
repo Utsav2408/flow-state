@@ -73,7 +73,7 @@ function processNashBatch(batch) {
   let batchReroutes = 0;
 
   batch.forEach((req) => {
-    const { fanId, destType, resolve } = req;
+    const { destType, resolve } = req;
     const dests = getDestinations(destType);
     if (dests.length === 0) { resolve(null); return; }
 

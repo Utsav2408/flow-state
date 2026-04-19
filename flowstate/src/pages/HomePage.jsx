@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { getComfortScore, getComfortColor } from '../intelligence/comfortScoring';
 import { requestRoute, getNashStats } from '../intelligence/routingEngine';
 import { BottomNav } from '../components/Shared';
+import { useAuth } from '../auth/useAuth';
 import { Map, UtensilsCrossed, Users, Star, ArrowUp } from 'lucide-react';
 
 // ─── Comfort Gauge (Hero) ──────────────────────────────────────────────────
@@ -72,6 +73,7 @@ const QuickNavBtn = ({ icon, label, onClick, bg, iconColor }) => (
 // ─── Main Component ─────────────────────────────────────────────────────────
 export const HomePage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const currentFan = useStore(s => s.currentFan);
   const zones = useStore(s => s.zones);
   const stands = useStore(s => s.stands);
@@ -195,16 +197,25 @@ export const HomePage = () => {
     <div className="pb-24 min-h-screen bg-stone-50 px-5 pt-12 font-sans">
 
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <header className="flex justify-between items-start mb-6">
-        <div>
+      <header className="flex justify-between items-start mb-6 gap-3">
+        <div className="min-w-0">
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">FlowState</h1>
           <p className="text-sm text-gray-500 font-medium mt-0.5">
             RCB vs CSK — Chinnaswamy Stadium
           </p>
         </div>
-        <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1 mt-1">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs font-bold text-red-600">Live</span>
+        <div className="flex flex-col items-end gap-2 shrink-0 mt-1">
+          <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-xs font-bold text-red-600">Live</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="text-xs font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 

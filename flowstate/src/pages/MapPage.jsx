@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { useAuth } from '../auth/useAuth';
 import { VenueMapCanvas } from '../components/VenueMapCanvas';
 import { BottomNav } from '../components/Shared';
 import { ChevronLeft, Search } from 'lucide-react';
 
 export const MapPage = () => {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [filters, setFilters] = useState({
     density: true,
     food: true,
@@ -36,15 +40,29 @@ export const MapPage = () => {
   return (
     <div className="pb-24 h-screen flex flex-col bg-stone-50 dark:bg-zinc-950">
       <header className="px-6 pt-12 pb-4 flex justify-between items-center z-10 shrink-0">
-        <div className="flex items-center gap-4">
-          <button className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center shadow-sm">
+        <div className="flex items-center gap-4 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center shadow-sm shrink-0"
+            aria-label="Back"
+          >
             <ChevronLeft className="dark:text-white" />
           </button>
-          <h1 className="text-2xl font-bold dark:text-white">Live venue map</h1>
+          <h1 className="text-2xl font-bold dark:text-white truncate">Live venue map</h1>
         </div>
-        <button className="p-2">
-          <Search className="text-gray-500 dark:text-gray-400" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-2 py-2 whitespace-nowrap"
+          >
+            Sign out
+          </button>
+          <button type="button" className="p-2" aria-label="Search">
+            <Search className="text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
       </header>
 
       <div className="px-6 py-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0 z-10">

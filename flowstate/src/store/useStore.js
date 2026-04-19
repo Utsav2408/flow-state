@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db, ref, onValue, populateInitialData } from '../firebase';
 
-export const useStore = create((set, get) => ({
+export const useStore = create((set) => ({
   simState: { clock: '19:30', speed: 1, state: 'MATCH_IN_PROGRESS' },
   zones: new Map(),
   stands: new Map(),
@@ -16,6 +16,7 @@ export const useStore = create((set, get) => ({
   clearActiveRoute: () => set({ activeRoute: null }),
 
   initMockData: async () => {
+    if (import.meta.env.VITE_SEED_DATABASE !== 'true') return;
     await populateInitialData();
   },
 

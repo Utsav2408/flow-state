@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "flow-state-demo-d66e0",
     "public": "dist",
     "ignore": [
       "firebase.json",

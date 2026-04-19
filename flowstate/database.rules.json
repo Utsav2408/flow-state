@@ -1,0 +1,26 @@
+{
+  "rules": {
+    "userRoles": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+    "zones": {
+      ".read": true,
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+    },
+    "stands": {
+      ".read": true,
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+    },
+    "simulation": {
+      ".read": true,
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+    },
+    "alerts": {
+      ".read": true,
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+    }
+  }
+}

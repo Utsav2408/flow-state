@@ -185,7 +185,7 @@ function updateDataStore() {
   // Set Firebase occasionally to avoid hammering DB
   if (db && Math.random() < 0.1) {
       const fbZones = Object.fromEntries(updatedZones);
-      set(ref(db, 'zones'), fbZones).catch(e => {});
+      set(ref(db, 'zones'), fbZones).catch(() => {});
   }
 
   // Update Stands
@@ -200,7 +200,7 @@ function updateDataStore() {
   
   if (db && Math.random() < 0.1) {
       const fbStands = Object.fromEntries(updatedStands);
-      set(ref(db, 'stands'), fbStands).catch(e => {});
+      set(ref(db, 'stands'), fbStands).catch(() => {});
   }
 }
 
@@ -265,6 +265,7 @@ export function getSimTime() {
   return simTimeSecs;
 }
 
-// Attach to window for easy debugging
-window.startSim = startSimulation;
-window.triggerSim = triggerEvent;
+if (import.meta.env.DEV) {
+  window.startSim = startSimulation;
+  window.triggerSim = triggerEvent;
+}
