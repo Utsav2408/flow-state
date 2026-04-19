@@ -17,13 +17,15 @@ export const VenueMapCanvas = ({
   disableInteraction = false,
   showMeetupCentroid = false,
   customMeetupPoint = null,
+  routeOverlay = null,
+  hideRouteBadge = false,
 }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const offscreenCanvasRef = useRef(document.createElement('canvas'));
   const zones = useStore((state) => state.zones);
   const stands = useStore((state) => state.stands);
-  const activeRoute = useStore((state) => state.activeRoute);
+  const storeActiveRoute = useStore((state) => state.activeRoute);
   const groupMembers = useStore((state) => state.groupMembers);
 
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
@@ -34,6 +36,7 @@ export const VenueMapCanvas = ({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const [time, setTime] = useState(0);
+  const activeRoute = routeOverlay || storeActiveRoute;
 
   /** Which pointer (mouse / finger) owns an active pan gesture — ignores extra touches */
   const activePanPointerId = useRef(null);
@@ -322,7 +325,7 @@ export const VenueMapCanvas = ({
           </button>
         </div>
       )}
-      {activeRoute && (
+      {activeRoute && !hideRouteBadge && (
         <div
           className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10"
           style={{

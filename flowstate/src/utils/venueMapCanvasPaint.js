@@ -2,6 +2,7 @@ import { DENSITY_UI } from '../config/comfortConfig';
 import {
   LOGICAL_MAP,
   STAND_LAYOUT,
+  RESTROOM_LAYOUT,
   GATES_LAYOUT,
   getNodeCanvasPos,
   FAN_MAP_PITCH_HALFW,
@@ -136,8 +137,55 @@ export function paintVenueMainCanvas(
 
   const showDensity = filters.density !== false;
   const showFood = filters.food !== false;
+  const showRestrooms = filters.restrooms !== false;
   const showExits = filters.exits !== false;
   const showRoute = filters.route !== false;
+
+  const youM = groupMembers.find((m) => m.id === 'You');
+  const youX = youM?.x ?? cx + 150;
+  const youY = youM?.y ?? cy - 100;
+  const isFanNavigation = activeRoute?.navMode === 'fan';
+
+  if (showRoute && (activeRoute?.path || activeRoute?.pathPoints)) {
+    const rawRoutePoints =
+      Array.isArray(activeRoute?.pathPoints) && activeRoute.pathPoints.length
+        ? activeRoute.pathPoints
+        : activeRoute?.path
+          ? buildRoutePointsFromNodes(activeRoute.path)
+          : [];
+    const pts = [{ x: youX, y: youY }, ...rawRoutePoints];
+
+    if (pts.length >= 2) {
+      ctx.save();
+      ctx.setLineDash([8, 4]);
+      ctx.lineDashOffset = -(time / 45);
+      ctx.strokeStyle = '#378ADD';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.95;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i += 1) {
+        ctx.lineTo(pts[i].x, pts[i].y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const { point, angle } = getRouteMidpointAndAngle(pts);
+      drawDirectionArrow(ctx, point.x, point.y, angle, '#378ADD');
+
+      const dest = pts[pts.length - 1];
+      const pulse = 1 + Math.sin(time / 220) * 0.18;
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#378ADD';
+      ctx.beginPath();
+      ctx.arc(dest.x, dest.y, 16 * pulse, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+  }
 
   if (showDensity) {
     zoneLocations.forEach((zp) => {
@@ -168,11 +216,25 @@ export function paintVenueMainCanvas(
     STAND_LAYOUT.forEach((sp) => {
       const standData = stands.get(sp.id);
       const waitTime = standData ? standData.waitTime : '?';
+      const isRouteDestination = activeRoute?.destination === sp.id;
+      const standSize = isRouteDestination ? 24 : 20;
+      const standHalf = standSize / 2;
+      const pulse = isRouteDestination ? 1 + Math.sin(time / 220) * 0.18 : 1;
 
       ctx.fillStyle = '#3B82F6';
       ctx.beginPath();
-      ctx.roundRect(sp.x - 10, sp.y - 10, 20, 20, 4);
+      ctx.roundRect(sp.x - standHalf, sp.y - standHalf, standSize, standSize, 4);
       ctx.fill();
+
+      if (isRouteDestination) {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, 18 * pulse, 0, 2 * Math.PI);
+        ctx.fillStyle = '#378ADD';
+        ctx.fill();
+        ctx.restore();
+      }
 
       ctx.fillStyle = '#404040';
       ctx.font = '12px Inter, sans-serif';
@@ -188,6 +250,35 @@ export function paintVenueMainCanvas(
     });
   }
 
+  if (showRestrooms) {
+    RESTROOM_LAYOUT.forEach((rr) => {
+      const isRouteDestination = activeRoute?.destination === rr.id;
+      const pulse = isRouteDestination ? 1 + Math.sin(time / 220) * 0.15 : 1;
+      const baseR = isRouteDestination ? 10 : 8;
+      if (isRouteDestination) {
+        ctx.save();
+        ctx.globalAlpha = 0.32;
+        ctx.beginPath();
+        ctx.arc(rr.x, rr.y, 18 * pulse, 0, 2 * Math.PI);
+        ctx.fillStyle = '#06B6D4';
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.beginPath();
+      ctx.arc(rr.x, rr.y, baseR, 0, 2 * Math.PI);
+      ctx.fillStyle = '#0EA5E9';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('R', rr.x, rr.y);
+    });
+  }
+
   if (showExits) {
     ctx.fillStyle = '#9CA3AF';
     ctx.font = '14px Inter, sans-serif';
@@ -196,12 +287,9 @@ export function paintVenueMainCanvas(
     });
   }
 
-  const youM = groupMembers.find((m) => m.id === 'You');
-  const youX = youM?.x ?? cx + 150;
-  const youY = youM?.y ?? cy - 100;
-
   ctx.beginPath();
-  ctx.arc(youX, youY, 8, 0, 2 * Math.PI);
+  const youRadius = isFanNavigation ? 9.5 + Math.sin(time / 250) * 0.8 : 8;
+  ctx.arc(youX, youY, youRadius, 0, 2 * Math.PI);
   ctx.fillStyle = '#2563EB';
   ctx.fill();
   ctx.strokeStyle = '#FFFFFF';
@@ -212,6 +300,16 @@ export function paintVenueMainCanvas(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('You', youX, youY);
+
+  if (isFanNavigation) {
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.beginPath();
+    ctx.arc(youX, youY, 14 + Math.sin(time / 220) * 1.2, 0, 2 * Math.PI);
+    ctx.fillStyle = '#2563EB';
+    ctx.fill();
+    ctx.restore();
+  }
 
   if (filters.group !== false) {
     groupMembers
@@ -251,52 +349,6 @@ export function paintVenueMainCanvas(
     ctx.textBaseline = 'middle';
     ctx.fillText('Meetup', meetupCentroid.x, meetupCentroid.y);
     ctx.restore();
-  }
-
-  if (showRoute && activeRoute?.path) {
-    const pts = [{ x: youX, y: youY }];
-    for (const nid of activeRoute.path) {
-      const p = getNodeCanvasPos(nid);
-      if (p) {
-        const last = pts[pts.length - 1];
-        if (!last || Math.abs(last.x - p.x) > 5 || Math.abs(last.y - p.y) > 5) {
-          pts.push(p);
-        }
-      }
-    }
-
-    if (pts.length >= 2) {
-      ctx.save();
-      ctx.setLineDash([10, 8]);
-      ctx.lineDashOffset = -(time / 50);
-      ctx.strokeStyle = '#2563EB';
-      ctx.lineWidth = 3.5;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      ctx.globalAlpha = 0.85;
-
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      const dest = pts[pts.length - 1];
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = '#EF4444';
-      ctx.beginPath();
-      ctx.roundRect(dest.x - 10, dest.y - 10, 20, 20, 4);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 10px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(activeRoute.destination || '', dest.x, dest.y);
-
-      ctx.restore();
-    }
   }
 
   if (hoveredMember) {
@@ -344,4 +396,56 @@ export function paintVenueMainCanvas(
 
     ctx.restore();
   }
+}
+
+function buildRoutePointsFromNodes(path) {
+  const points = [];
+  for (const nid of path || []) {
+    const p = getNodeCanvasPos(nid);
+    if (!p) continue;
+    const last = points[points.length - 1];
+    if (!last || Math.abs(last.x - p.x) > 5 || Math.abs(last.y - p.y) > 5) {
+      points.push(p);
+    }
+  }
+  return points;
+}
+
+function getRouteMidpointAndAngle(points) {
+  let totalLength = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    totalLength += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  }
+  const half = totalLength / 2;
+  let walked = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    const a = points[i - 1];
+    const b = points[i];
+    const seg = Math.hypot(b.x - a.x, b.y - a.y);
+    if (walked + seg >= half) {
+      const t = seg ? (half - walked) / seg : 0;
+      return {
+        point: { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t },
+        angle: Math.atan2(b.y - a.y, b.x - a.x),
+      };
+    }
+    walked += seg;
+  }
+  const last = points[points.length - 1];
+  const prev = points[Math.max(0, points.length - 2)];
+  return { point: last, angle: Math.atan2(last.y - prev.y, last.x - prev.x) };
+}
+
+function drawDirectionArrow(ctx, x, y, angle, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(8, 0);
+  ctx.lineTo(-6, -4.5);
+  ctx.lineTo(-6, 4.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }

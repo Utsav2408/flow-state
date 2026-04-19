@@ -88,7 +88,6 @@ export const HomePage = () => {
   const zones = useStore(s => s.zones);
   const stands = useStore(s => s.stands);
   const simState = useStore(s => s.simState);
-  const setActiveRoute = useStore(s => s.setActiveRoute);
   const activeRoute = useStore(s => s.activeRoute);
   const nashRoutingEpoch = useStore(s => s.nashRoutingEpoch);
 
@@ -232,16 +231,10 @@ export const HomePage = () => {
 
   // ── Route request handler ───────────────────────────────────────────
   const handleRouteRequest = async () => {
+    const target = nearestFood.id && nearestFood.id !== '--' ? nearestFood.id : 'S12';
     setRouting(true);
-    try {
-      const result = await requestRoute(currentFan?.id || 'fan-1', 'food');
-      if (result) {
-        setActiveRoute(result);
-        navigate('/map');
-      }
-    } finally {
-      setRouting(false);
-    }
+    navigate(`/map?dest=${encodeURIComponent(target)}`);
+    setTimeout(() => setRouting(false), 250);
   };
 
   // ─── Render ─────────────────────────────────────────────────────────
@@ -405,7 +398,7 @@ export const HomePage = () => {
         <QuickNavBtn
           icon={<UtensilsCrossed size={22} />}
           label="Food"
-          onClick={() => navigate('/map')}
+          onClick={() => navigate(`/map?dest=${encodeURIComponent(nearestFood.id !== '--' ? nearestFood.id : 'S12')}`)}
           bg="bg-red-50"
           iconColor="text-red-400"
         />
