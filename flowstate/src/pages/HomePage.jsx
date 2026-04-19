@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { getComfortScore, getComfortColor } from '../intelligence/comfortScoring';
@@ -77,9 +77,20 @@ export const HomePage = () => {
   const currentFan = useStore(s => s.currentFan);
   const zones = useStore(s => s.zones);
   const stands = useStore(s => s.stands);
+  const simState = useStore(s => s.simState);
   const setActiveRoute = useStore(s => s.setActiveRoute);
 
   const [routing, setRouting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(480); // 8 mins
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+    }, 1000 / (simState?.speed || 1));
+    return () => clearInterval(interval);
+  }, [simState?.speed]);
+
+  const isEgress = simState?.state?.toLowerCase() === 'post_match' || simState?.state?.toLowerCase() === 'post-match';
 
   const zoneId = currentFan?.location || 'B4-B6';
 
@@ -193,6 +204,63 @@ export const HomePage = () => {
   };
 
   // ─── Render ─────────────────────────────────────────────────────────
+  if (isEgress) {
+    return (
+      <div className="pb-24 min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
+        <header className="mb-6">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Match ended - RCB won!</h1>
+          <p className="text-sm text-gray-500 font-medium mt-0.5">Your personalized exit plan is ready</p>
+        </header>
+
+        {/* Timer */}
+        <div className="flex flex-col items-center justify-center my-8">
+          <div className="relative flex items-center justify-center w-48 h-48 rounded-full border-8 border-gray-100">
+             <svg className="absolute inset-0 w-full h-full -rotate-90">
+               <circle 
+                  cx="96" cy="96" r="88" 
+                  fill="none" stroke="#10B981" strokeWidth="8"
+                  strokeDasharray="553" strokeDashoffset="200"
+                  strokeLinecap="round" />
+             </svg>
+             <div className="flex flex-col items-center">
+               <span className="text-5xl font-extrabold text-gray-900 tracking-tighter">3:42</span>
+               <span className="text-sm font-semibold text-gray-500 mt-1">minutes</span>
+             </div>
+          </div>
+          <p className="text-emerald-700 font-bold mt-6">Your optimal exit window opens soon</p>
+        </div>
+
+        {/* Gate Card */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+             <div className="p-2 bg-emerald-50 rounded-full">
+               <Map size={18} className="text-emerald-600" />
+             </div>
+             <div>
+               <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Assigned gate</p>
+               <p className="text-sm font-bold text-gray-900">Gate 3 — South exit</p>
+             </div>
+          </div>
+        </div>
+
+        {/* Wait Incentive */}
+        <div className="bg-blue-50 bg-opacity-50 rounded-2xl p-4 shadow-sm border border-blue-200 flex items-center gap-4">
+           <div className="p-3 bg-blue-100 rounded-full text-blue-600 shrink-0">
+              <UtensilsCrossed size={20} />
+           </div>
+           <div className="flex-1">
+              <p className="text-sm font-bold text-gray-900">Wait 3 min for free coffee</p>
+              <p className="text-xs text-gray-600 mt-0.5 font-medium">Skip 78% of congestion and exit smoothly.</p>
+           </div>
+           <button className="bg-white border border-gray-200 text-gray-900 font-bold text-xs py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0">
+             Claim
+           </button>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-24 min-h-screen bg-stone-50 px-5 pt-12 font-sans">
 
@@ -288,30 +356,54 @@ export const HomePage = () => {
         <QuickNavBtn
           icon={<Users size={22} />}
           label="Group"
-          onClick={() => navigate('/map')}
+          onClick={() => navigate('/group')}
           bg="bg-orange-50"
           iconColor="text-orange-400"
         />
         <QuickNavBtn
           icon={<Star size={22} />}
           label="Rewards"
-          onClick={() => navigate('/map')}
+          onClick={() => navigate('/rewards')}
           bg="bg-amber-50"
           iconColor="text-amber-500"
         />
       </section>
 
-      {/* ── Reward Card ────────────────────────────────────────────── */}
-      <section className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-50 rounded-full">
-            <Star size={20} className="text-amber-500" />
+      {/* ── Incentive Card ────────────────────────────────────────────── */}
+      <section className="mb-6 space-y-3">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md">
+              Targeted Offer
+            </span>
+            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')} min left
+            </span>
           </div>
-          <div className="flex-1">
-            <h4 className="font-bold text-gray-900 text-sm">Visit Stand 12 for 2x points</h4>
-            <p className="text-xs text-gray-500">Only 90m away — expires in 8 min</p>
+          <div className="flex items-center gap-3 mt-1">
+            <div className="p-2 bg-gray-50 rounded-full shrink-0">
+              <span className="text-lg">🎯</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-gray-900 text-sm truncate">2x points at Stand 12</h4>
+              <p className="text-xs text-gray-500 mt-0.5">
+                <span className="font-bold text-emerald-600">+50 pts</span> • 90m away
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setActiveRoute({
+                  path: ['B4-B6', 'C4-C6', 'C1-C3', 'S12'],
+                  destination: 'Stand 12',
+                  nashRerouteCount: 14
+                });
+                navigate('/map');
+              }}
+              className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2 px-5 rounded-xl transition-colors active:scale-95 shadow-sm"
+            >
+              Go
+            </button>
           </div>
-          <span className="text-sm font-bold text-emerald-600">+50 pts</span>
         </div>
       </section>
 

@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
+import { GroupPage } from './pages/GroupPage';
+import { RewardsPage } from './pages/RewardsPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProtectedOperator } from './components/ProtectedOperator';
 import { RequireAuth } from './components/RequireAuth';
@@ -13,8 +15,8 @@ function FanShell() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/group" element={<Navigate to="/" replace />} />
-        <Route path="/rewards" element={<Navigate to="/" replace />} />
+        <Route path="/group" element={<GroupPage />} />
+        <Route path="/rewards" element={<RewardsPage />} />
         <Route path="/profile" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

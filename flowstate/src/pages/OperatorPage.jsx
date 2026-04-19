@@ -4,6 +4,7 @@ import { db, ref, set } from '../firebase';
 import { startSimulation, triggerEvent, getSimStats } from '../simulation/crowdSimulator';
 import { requestRoute, getNashStats } from '../intelligence/routingEngine';
 import { getComfortColor } from '../intelligence/comfortScoring';
+import { BottomNav } from '../components/Shared';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const BASELINE_WAIT = 5.5; // minutes
@@ -50,7 +51,7 @@ function formatSimTime(secs) {
 const Toast = ({ message, visible }) => (
   <div style={{
     position: 'fixed',
-    bottom: 32,
+    bottom: 88,
     left: '50%',
     transform: `translateX(-50%) translateY(${visible ? '0' : '30px'})`,
     opacity: visible ? 1 : 0,
@@ -1298,6 +1299,9 @@ export const OperatorPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Bottom Nav */}
+      <BottomNav />
 
       {/* Toast */}
       <Toast message={toast.message} visible={toast.visible} />

@@ -12,6 +12,7 @@ export const VenueMapCanvas = ({ filters }) => {
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [hoveredMember, setHoveredMember] = useState(null);
   const requestRef = useRef();
   
   // Animation pulse clock
@@ -38,6 +39,12 @@ export const VenueMapCanvas = ({ filters }) => {
     { id: 'S5', x: cx - 160, y: cy + 50 },
     { id: 'S7', x: cx + 150, y: cy - 200 },
     { id: 'S12', x: cx + 160, y: cy + 60 }
+  ]), [cx, cy]);
+
+  const groupMembers = useMemo(() => ([
+    { id: 'AK', name: 'Arjun K', x: cx + 110, y: cy - 130, zone: 'Section B4, near Stand 3', color: '#F43F5E' },
+    { id: 'RS', name: 'Riya S', x: cx - 180, y: cy - 80, zone: 'Restroom block A', color: '#D97706' },
+    { id: 'PV', name: 'Pradeep V', x: cx + 30, y: cy + 180, zone: 'South concourse', color: '#10B981' }
   ]), [cx, cy]);
 
   // ── Node position helper for route drawing ────────────────────────────
@@ -245,8 +252,28 @@ export const VenueMapCanvas = ({ filters }) => {
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fillStyle = '#2563EB';
-    ctx.font = '14px Inter, sans-serif';
-    ctx.fillText('You', youX, youY - 20);
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('You', youX, youY);
+
+    // Render Group Members
+    if (filters.group !== false) {
+      groupMembers.forEach(m => {
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, 8, 0, 2 * Math.PI);
+        ctx.fillStyle = m.color;
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 8px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(m.id, m.x, m.y);
+      });
+    }
 
     // ── Route overlay (animated dashed blue path) ────────────────────
     if (activeRoute?.path) {
@@ -298,15 +325,88 @@ export const VenueMapCanvas = ({ filters }) => {
       }
     }
 
+    // Interactive Tooltip (Hover)
+    if (hoveredMember) {
+      ctx.save();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = 'rgba(0,0,0,0.15)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 2;
+      
+      const textWidth = Math.max(ctx.measureText(hoveredMember.name).width, ctx.measureText(hoveredMember.zone).width);
+      const ttWidth = Math.max(120, textWidth + 30);
+      const ttHeight = 44;
+      const ttX = hoveredMember.x - ttWidth / 2;
+      const ttY = hoveredMember.y - 65;
+      
+      ctx.beginPath();
+      ctx.roundRect(ttX, ttY, ttWidth, ttHeight, 8);
+      ctx.fill();
+      
+      // Pointer
+      ctx.beginPath();
+      ctx.moveTo(hoveredMember.x - 6, ttY + ttHeight);
+      ctx.lineTo(hoveredMember.x + 6, ttY + ttHeight);
+      ctx.lineTo(hoveredMember.x, ttY + ttHeight + 6);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.shadowColor = 'transparent';
+      ctx.beginPath();
+      ctx.roundRect(ttX, ttY, ttWidth, ttHeight, 8);
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.stroke();
+      
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(hoveredMember.name, hoveredMember.x, ttY + 8);
+      
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.fillText(hoveredMember.zone, hoveredMember.x, ttY + 24);
+      
+      ctx.restore();
+    }
+
     ctx.restore();
 
-  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, time]);
+  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, groupMembers, time, hoveredMember]);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   };
   const handleMouseMove = (e) => {
+    if (!canvasRef.current || !containerRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const scaleFit = Math.min(rect.width / logicalWidth, rect.height / logicalHeight) * transform.scale;
+    const offsetX = (rect.width - logicalWidth * scaleFit) / 2 + transform.x;
+    const offsetY = (rect.height - logicalHeight * scaleFit) / 2 + transform.y;
+    
+    const mouseX = (e.clientX - rect.left - offsetX) / scaleFit;
+    const mouseY = (e.clientY - rect.top - offsetY) / scaleFit;
+    
+    let isHover = false;
+    for (const m of groupMembers) {
+      if (Math.hypot(m.x - mouseX, m.y - mouseY) < 15 / scaleFit) {
+        setHoveredMember(m);
+        isHover = true;
+        break;
+      }
+    }
+    if (!isHover && hoveredMember) {
+      setHoveredMember(null);
+    }
+    
+    if (isHover) {
+       containerRef.current.style.cursor = 'pointer';
+    } else {
+       containerRef.current.style.cursor = isDragging ? 'grabbing' : 'grab';
+    }
+
     if (!isDragging) return;
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
