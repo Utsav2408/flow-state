@@ -48,6 +48,7 @@ export async function populateInitialData() {
     clock: '19:30',
     speed: 1,
     state: 'MATCH_IN_PROGRESS',
+    halftimeCountdownSeconds: 480,
   });
 
   const zonesInfo = {};

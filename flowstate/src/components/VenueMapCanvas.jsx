@@ -1,5 +1,13 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
+import { DENSITY_UI } from '../config/comfortConfig';
+import {
+  LOGICAL_MAP,
+  ZONE_GROUPS,
+  STAND_LAYOUT,
+  GATES_LAYOUT,
+  getNodeCanvasPos,
+} from '../models/venueLayout';
 
 export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetupCentroid = false }) => {
   const containerRef = useRef(null);
@@ -20,55 +28,19 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
   // Animation pulse clock
   const [time, setTime] = useState(0);
 
-  // Logical map size
-  const logicalWidth = 800;
-  const logicalHeight = 800;
-  const cx = logicalWidth / 2;
-  const cy = logicalHeight / 2;
+  const logicalWidth = LOGICAL_MAP.width;
+  const logicalHeight = LOGICAL_MAP.height;
+  const cx = LOGICAL_MAP.cx;
+  const cy = LOGICAL_MAP.cy;
 
-  // Static positions matching definitions
-  const zoneLocations = useMemo(() => ([
-    { id: 'A1-A4', x: cx - 220, y: cy - 100, rx: 60, ry: 60, alias: ['A1','A2','A3','A4'] },
-    { id: 'B1-B3', x: cx, y: cy - 250, rx: 80, ry: 40, alias: ['B1','B2','B3'] },
-    { id: 'B4-B6', x: cx + 220, y: cy - 100, rx: 70, ry: 50, alias: ['B4','B5','B6'] },
-    { id: 'C1-C3', x: cx + 220, y: cy + 150, rx: 80, ry: 60, alias: ['C1','C2','C3'] },
-    { id: 'C4-C6', x: cx, y: cy + 250, rx: 90, ry: 45, alias: ['C4','C5','C6'] },
-    { id: 'D1-D3', x: cx - 200, y: cy + 150, rx: 70, ry: 60, alias: ['D1','D2','D3'] }
-  ]), [cx, cy]);
-
-  const standPositions = useMemo(() => ([
-    { id: 'S3', x: cx - 120, y: cy - 200 },
-    { id: 'S5', x: cx - 160, y: cy + 50 },
-    { id: 'S7', x: cx + 150, y: cy - 200 },
-    { id: 'S12', x: cx + 160, y: cy + 60 }
-  ]), [cx, cy]);
+  const zoneLocations = ZONE_GROUPS;
 
   const meetupCentroid = useMemo(() => {
     if (!showMeetupCentroid || !groupMembers.length) return null;
-    // Suggestion is "Section B4, Aisle 3 junction"
-    // Pinting exactly to B4-B6 zone coordinate slightly adjusted for "Aisle 3 junction"
-    return { x: cx + 220, y: cy - 100 };
-  }, [groupMembers.length, showMeetupCentroid, cx, cy]);
-
-  // ── Node position helper for route drawing ────────────────────────────
-  const getNodePos = (nodeId) => {
-    const zoneMap = {
-      A1:'A1-A4', A2:'A1-A4', A3:'A1-A4', A4:'A1-A4',
-      B1:'B1-B3', B2:'B1-B3', B3:'B1-B3',
-      B4:'B4-B6', B5:'B4-B6', B6:'B4-B6',
-      C1:'C1-C3', C2:'C1-C3', C3:'C1-C3',
-      C4:'C4-C6', C5:'C4-C6', C6:'C4-C6',
-      D1:'D1-D3', D2:'D1-D3', D3:'D1-D3',
-    };
-    const gid = zoneMap[nodeId];
-    if (gid) {
-      const zl = zoneLocations.find(z => z.id === gid);
-      if (zl) return { x: zl.x, y: zl.y };
-    }
-    const sp = standPositions.find(s => s.id === nodeId);
-    if (sp) return { x: sp.x, y: sp.y };
-    return null;
-  };
+    const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
+    const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
+    return { x: sx, y: sy };
+  }, [groupMembers, showMeetupCentroid]);
 
   // Handle Request Animation Frame for pulse
   useEffect(() => {
@@ -117,16 +89,16 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
         
         let colorCenter, colorEdge;
         let isPulsing = false;
-        if (density < 40) {
+        if (density < DENSITY_UI.lowMax) {
             colorCenter = 'rgba(159, 225, 203, 0.8)';
             colorEdge = 'rgba(159, 225, 203, 0)';
-        } else if (density <= 70) {
+        } else if (density <= DENSITY_UI.midMax) {
             colorCenter = 'rgba(250, 199, 117, 0.8)';
             colorEdge = 'rgba(250, 199, 117, 0)';
         } else {
             colorCenter = 'rgba(240, 149, 149, 0.9)';
             colorEdge = 'rgba(240, 149, 149, 0)';
-            if (density > 80) isPulsing = true;
+            if (density > DENSITY_UI.pulseAbove) isPulsing = true;
         }
 
         // Pulse logic - simple scale oscilation
@@ -234,7 +206,7 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
     }
 
     if (showFood) {
-      standPositions.forEach(sp => {
+      STAND_LAYOUT.forEach(sp => {
         const standData = stands.get(sp.id);
         const waitTime = standData ? standData.waitTime : '?';
 
@@ -254,10 +226,9 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
     if (showExits) {
       ctx.fillStyle = '#9CA3AF';
       ctx.font = '14px Inter, sans-serif';
-      ctx.fillText('Gate 1', cx - 300, cy - 300);
-      ctx.fillText('Gate 2', cx + 300, cy - 300);
-      ctx.fillText('Gate 3', cx + 300, cy + 300);
-      ctx.fillText('Gate 4', cx - 300, cy + 300);
+      GATES_LAYOUT.forEach((g) => {
+        ctx.fillText(`${g.id} (${g.shortLabel})`, g.x, g.y);
+      });
     }
 
     const youM = groupMembers.find((m) => m.id === 'You');
@@ -323,7 +294,7 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
       // Build deduplicated position array starting from "You"
       const pts = [{ x: youX, y: youY }];
       for (const nid of activeRoute.path) {
-        const p = getNodePos(nid);
+        const p = getNodeCanvasPos(nid);
         if (p) {
           const last = pts[pts.length - 1];
           if (!last || Math.abs(last.x - p.x) > 5 || Math.abs(last.y - p.y) > 5) {
@@ -415,7 +386,7 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
 
     ctx.restore();
 
-  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, groupMembers, time, hoveredMember, cx, cy, meetupCentroid, containerSize]);
+  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, groupMembers, time, hoveredMember, cx, cy, meetupCentroid, containerSize]);
 
   // React's delegated onWheel is often passive; preventDefault won't run and the page may steal the gesture.
   useEffect(() => {

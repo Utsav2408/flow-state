@@ -10,7 +10,13 @@ const DEFAULT_GROUP_MEMBERS = [
 ];
 
 export const useStore = create((set) => ({
-  simState: { clock: '19:30', speed: 1, state: 'MATCH_IN_PROGRESS' },
+  simState: {
+    clock: '19:30',
+    speed: 1,
+    state: 'MATCH_IN_PROGRESS',
+    /** Countdown for targeted offers / halftime UI (seconds). Overwritten by RTDB `simulation`. */
+    halftimeCountdownSeconds: 480,
+  },
   zones: new Map(),
   stands: new Map(),
   currentFan: { location: 'B4-B6', id: 'fan-1' },
@@ -38,7 +44,10 @@ export const useStore = create((set) => ({
     
     onValue(ref(db, 'simulation'), (snapshot) => {
       const data = snapshot.val();
-      if(data) set({ simState: data });
+      if (data)
+        set((state) => ({
+          simState: { ...state.simState, ...data },
+        }));
     });
 
     onValue(ref(db, 'zones'), (snapshot) => {

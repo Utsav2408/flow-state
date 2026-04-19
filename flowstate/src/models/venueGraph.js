@@ -1,3 +1,5 @@
+import { CONGESTION_LOAD_SQ_COEFF } from '../config/routingConstants';
+
 export class VenueGraph {
   constructor() {
     this.adjacencyList = new Map();
@@ -32,8 +34,7 @@ export class VenueGraph {
   }
 
   getWeight(edge) {
-    // Congestion weight formula: distance * (1 + currentLoad^2 * 5)
-    return edge.distance * (1 + Math.pow(edge.currentLoad, 2) * 5);
+    return edge.distance * (1 + Math.pow(edge.currentLoad, 2) * CONGESTION_LOAD_SQ_COEFF);
   }
 
   getNeighbors(nodeId) {

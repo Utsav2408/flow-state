@@ -1,8 +1,18 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { getComfortScore, getComfortColor, normalizeDensityPercent } from '../intelligence/comfortScoring';
+import {
+  getComfortScore,
+  getComfortColor,
+  normalizeDensityPercent,
+  COMFORT_THRESHOLDS,
+} from '../intelligence/comfortScoring';
 import { requestRoute, getNashStats } from '../intelligence/routingEngine';
+import {
+  GATE_BY_ID,
+  estimateWalkMetersFromPathCost,
+  getZoneAliasesForGroup,
+} from '../models/venueLayout';
 import { BottomNav } from '../components/Shared';
 import { useAuth } from '../auth/useAuth';
 import { Map, UtensilsCrossed, Users, Star, ArrowUp } from 'lucide-react';
@@ -79,19 +89,43 @@ export const HomePage = () => {
   const stands = useStore(s => s.stands);
   const simState = useStore(s => s.simState);
   const setActiveRoute = useStore(s => s.setActiveRoute);
+  const activeRoute = useStore(s => s.activeRoute);
   const nashRoutingEpoch = useStore(s => s.nashRoutingEpoch);
 
   const [routing, setRouting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(480); // 8 mins
+  const [timeLeft, setTimeLeft] = useState(() => simState?.halftimeCountdownSeconds ?? 480);
+  const [exitPlan, setExitPlan] = useState(null);
+
+  useEffect(() => {
+    const seed = simState?.halftimeCountdownSeconds;
+    if (seed != null && seed >= 0) setTimeLeft(seed);
+  }, [simState?.halftimeCountdownSeconds]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000 / (simState?.speed || 1));
     return () => clearInterval(interval);
   }, [simState?.speed]);
 
-  const isEgress = simState?.state?.toLowerCase() === 'post_match' || simState?.state?.toLowerCase() === 'post-match';
+  const isEgress =
+    simState?.state?.toLowerCase() === 'post_match' ||
+    simState?.state?.toLowerCase() === 'post-match';
+
+  useEffect(() => {
+    if (!isEgress) {
+      setExitPlan(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      const r = await requestRoute(currentFan?.id || 'fan-1', 'exit');
+      if (!cancelled && r) setExitPlan(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEgress, currentFan?.id]);
 
   const zoneId = currentFan?.location || 'B4-B6';
 
@@ -124,15 +158,7 @@ export const HomePage = () => {
 
   // ── Crowd level (fan's zone group density) ──────────────────────────
   const crowdLevel = useMemo(() => {
-    const aliases = {
-      'A1-A4': ['A1','A2','A3','A4'],
-      'B1-B3': ['B1','B2','B3'],
-      'B4-B6': ['B4','B5','B6'],
-      'C1-C3': ['C1','C2','C3'],
-      'C4-C6': ['C4','C5','C6'],
-      'D1-D3': ['D1','D2','D3'],
-    };
-    const group = aliases[zoneId] || [];
+    const group = getZoneAliasesForGroup(zoneId);
     let total = 0, cnt = 0;
     group.forEach(z => {
       const d = zones.get(z);
@@ -140,6 +166,12 @@ export const HomePage = () => {
     });
     return cnt > 0 ? Math.round(total / cnt) : 0;
   }, [zones, zoneId]);
+
+  const promoWalkMeters = useMemo(() => {
+    if (activeRoute?.pathCost != null)
+      return estimateWalkMetersFromPathCost(activeRoute.pathCost);
+    return Math.min(220, Math.round(48 + crowdLevel * 1.8));
+  }, [activeRoute?.pathCost, crowdLevel]);
 
   // ── Active route count ──────────────────────────────────────────────
   const activeRouteCount = useMemo(() => {
@@ -151,8 +183,10 @@ export const HomePage = () => {
   // ── Prediction text ─────────────────────────────────────────────────
   const predictionText = useMemo(() => {
     const section = zoneId.split('-')[0];
-    if (comfortScore >= 70) return `Section ${section} — looking good for 15 min`;
-    if (comfortScore >= 50) return `Section ${section} — moderate crowd expected`;
+    if (comfortScore >= COMFORT_THRESHOLDS.good)
+      return `Section ${section} — looking good for 15 min`;
+    if (comfortScore >= COMFORT_THRESHOLDS.moderate)
+      return `Section ${section} — moderate crowd expected`;
     return `Section ${section} — consider moving soon`;
   }, [comfortScore, zoneId]);
 
@@ -170,7 +204,7 @@ export const HomePage = () => {
         iconBg: 'bg-emerald-100',
         iconColor: 'text-emerald-600',
       };
-    } else if (comfortScore < 50) {
+    } else if (comfortScore < COMFORT_THRESHOLDS.moderate) {
       return {
         type: 'crowded',
         title: 'Your zone is getting crowded',
@@ -219,22 +253,29 @@ export const HomePage = () => {
           <p className="text-sm text-gray-500 font-medium mt-0.5">Your personalized exit plan is ready</p>
         </header>
 
-        {/* Timer */}
+        {/* Timer — ETA from exit route path cost */}
         <div className="flex flex-col items-center justify-center my-8">
           <div className="relative flex items-center justify-center w-48 h-48 rounded-full border-8 border-gray-100">
              <svg className="absolute inset-0 w-full h-full -rotate-90">
                <circle 
                   cx="96" cy="96" r="88" 
                   fill="none" stroke="#10B981" strokeWidth="8"
-                  strokeDasharray="553" strokeDashoffset="200"
+                  strokeDasharray="553"
+                  strokeDashoffset={exitPlan?.etaMinutes != null ? String(553 * (1 - Math.min(1, exitPlan.etaMinutes / 25))) : '200'}
                   strokeLinecap="round" />
              </svg>
              <div className="flex flex-col items-center">
-               <span className="text-5xl font-extrabold text-gray-900 tracking-tighter">3:42</span>
-               <span className="text-sm font-semibold text-gray-500 mt-1">minutes</span>
+               <span className="text-5xl font-extrabold text-gray-900 tracking-tighter">
+                 {exitPlan?.etaMinutes != null ? exitPlan.etaMinutes : '—'}
+               </span>
+               <span className="text-sm font-semibold text-gray-500 mt-1">min est. to gate</span>
              </div>
           </div>
-          <p className="text-emerald-700 font-bold mt-6">Your optimal exit window opens soon</p>
+          <p className="text-emerald-700 font-bold mt-6 text-center px-4">
+            {exitPlan?.path?.length
+              ? 'Route uses live congestion weights from the venue graph.'
+              : 'Computing your exit route…'}
+          </p>
         </div>
 
         {/* Gate Card */}
@@ -245,7 +286,11 @@ export const HomePage = () => {
              </div>
              <div>
                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Assigned gate</p>
-               <p className="text-sm font-bold text-gray-900">Gate 3 — South exit</p>
+               <p className="text-sm font-bold text-gray-900">
+                 {exitPlan?.destination && GATE_BY_ID[exitPlan.destination]
+                   ? `${exitPlan.destination} — ${GATE_BY_ID[exitPlan.destination].shortLabel} exit`
+                   : 'Selecting best gate…'}
+               </p>
              </div>
           </div>
         </div>
@@ -256,10 +301,14 @@ export const HomePage = () => {
               <UtensilsCrossed size={20} />
            </div>
            <div className="flex-1">
-              <p className="text-sm font-bold text-gray-900">Wait 3 min for free coffee</p>
-              <p className="text-xs text-gray-600 mt-0.5 font-medium">Skip 78% of congestion and exit smoothly.</p>
+              <p className="text-sm font-bold text-gray-900">
+                Wait {nearestFood.waitTime != null ? Math.max(1, Math.round(nearestFood.waitTime)) : '—'} min for concessions
+              </p>
+              <p className="text-xs text-gray-600 mt-0.5 font-medium">
+                Skip about {Math.min(95, Math.max(5, Math.round(100 - comfortScore)))}% of congestion vs peak.
+              </p>
            </div>
-           <button className="bg-white border border-gray-200 text-gray-900 font-bold text-xs py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0">
+           <button type="button" className="bg-white border border-gray-200 text-gray-900 font-bold text-xs py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0">
              Claim
            </button>
         </div>
@@ -392,21 +441,20 @@ export const HomePage = () => {
               <span className="text-lg">🎯</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-gray-900 text-sm truncate">2x points at Stand 12</h4>
+              <h4 className="font-bold text-gray-900 text-sm truncate">
+                2x points at {nearestFood.id !== '--' ? nearestFood.id : 'nearest stand'}
+              </h4>
               <p className="text-xs text-gray-500 mt-0.5">
-                <span className="font-bold text-emerald-600">+50 pts</span> • 90m away
+                <span className="font-bold text-emerald-600">+50 pts</span>
+                {' '}
+                • ~{promoWalkMeters}m walk est.
               </p>
             </div>
             <button
-              onClick={() => {
-                setActiveRoute({
-                  path: ['B4-B6', 'C4-C6', 'C1-C3', 'S12'],
-                  destination: 'Stand 12',
-                  nashRerouteCount: 14
-                });
-                navigate('/map');
-              }}
-              className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2 px-5 rounded-xl transition-colors active:scale-95 shadow-sm"
+              type="button"
+              onClick={() => handleRouteRequest()}
+              className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2 px-5 rounded-xl transition-colors active:scale-95 shadow-sm disabled:opacity-60"
+              disabled={routing}
             >
               Go
             </button>
