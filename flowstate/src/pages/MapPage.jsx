@@ -13,7 +13,9 @@ export const MapPage = () => {
     density: true,
     food: true,
     restrooms: true,
-    exits: true
+    exits: true,
+    /** Only show your pin on the live map; other group members stay on the group screen */
+    group: false,
   });
   const zones = useStore(state => state.zones);
   const stands = useStore(state => state.stands);

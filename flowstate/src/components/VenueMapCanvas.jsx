@@ -35,6 +35,9 @@ export const VenueMapCanvas = ({
 
   const [time, setTime] = useState(0);
 
+  /** Which pointer (mouse / finger) owns an active pan gesture — ignores extra touches */
+  const activePanPointerId = useRef(null);
+
   const logicalWidth = LOGICAL_MAP.width;
   const logicalHeight = LOGICAL_MAP.height;
   const cx = LOGICAL_MAP.cx;
@@ -185,14 +188,25 @@ export const VenueMapCanvas = ({
     return () => canvas.removeEventListener('wheel', onWheel);
   }, [disableInteraction]);
 
-  const handleMouseDown = (e) => {
+  const handlePointerDown = (e) => {
     if (disableInteraction) return;
+    if (activePanPointerId.current !== null) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    activePanPointerId.current = e.pointerId;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture unsupported */
+    }
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseMove = (e) => {
+  const handlePointerMove = (e) => {
     if (!canvasRef.current || !containerRef.current) return;
+    if (activePanPointerId.current !== null && e.pointerId !== activePanPointerId.current) return;
+
     const rect = canvasRef.current.getBoundingClientRect();
     const scaleFit =
       Math.min(rect.width / logicalWidth, rect.height / logicalHeight) * transform.scale;
@@ -231,7 +245,21 @@ export const VenueMapCanvas = ({
     setDragStart({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const endPan = (e) => {
+    if (e.pointerId !== activePanPointerId.current) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* not captured */
+    }
+    activePanPointerId.current = null;
+    setIsDragging(false);
+  };
+
+  const handleLostPointerCapture = () => {
+    activePanPointerId.current = null;
+    setIsDragging(false);
+  };
 
   const bumpZoom = (direction) => {
     setTransform((prev) => ({
@@ -252,11 +280,13 @@ export const VenueMapCanvas = ({
     >
       <canvas
         ref={canvasRef}
-        className="block touch-none"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        className="block touch-none select-none"
+        style={{ touchAction: 'none' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={endPan}
+        onPointerCancel={endPan}
+        onLostPointerCapture={handleLostPointerCapture}
       />
       {!disableInteraction && (
         <div className="absolute top-3 right-3 z-10 flex flex-col rounded-xl bg-white/95 shadow-md border border-gray-200 overflow-hidden dark:bg-zinc-900/95 dark:border-zinc-700">
