@@ -9,6 +9,16 @@ export function formatSimTime(secs) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/** Short wall-clock string for “event started” banners */
+export function formatWallClock(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
 export function formatTimeAgo(ts) {
   if (!ts) return '';
   const diff = Math.floor((Date.now() - ts) / 1000);

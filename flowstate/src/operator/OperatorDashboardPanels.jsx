@@ -8,8 +8,8 @@ import {
   EventBtn,
   FlowStateLogo,
 } from './OperatorDashboardWidgets';
-import { ZONE_GROUPS, MAX_ALERTS } from './operatorConstants';
-import { formatSimTime } from './operatorMetrics';
+import { ZONE_GROUPS, MAX_ALERTS, TRIGGER_EVENT_LABELS } from './operatorConstants';
+import { formatSimTime, formatWallClock } from './operatorMetrics';
 
 export function OperatorDashboardHeader({ simTimeSecs, matchLabel, matchColor }) {
   return (
@@ -246,7 +246,10 @@ export function OperatorDashboardRightColumn({
   aiActionTitle,
   speed,
   updateSimSpeed,
-  flashBtn,
+  activeTriggerEvent,
+  pulsingTriggerEvent,
+  lastTriggerMeta,
+  onClearActiveTrigger,
   handleTriggerEvent,
   demoRouteLoading,
   handleDemoRoute,
@@ -361,36 +364,108 @@ export function OperatorDashboardRightColumn({
         >
           Trigger Event
         </div>
+        {lastTriggerMeta ? (
+          <div
+            role="status"
+            style={{
+              marginBottom: 10,
+              padding: '10px 12px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(59,130,246,0.08) 100%)',
+              border: '1px solid rgba(16,185,129,0.35)',
+              boxShadow: '0 2px 8px rgba(16,185,129,0.12)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 9,
+                fontWeight: 800,
+                color: '#047857',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                marginBottom: 4,
+              }}
+            >
+              Event started
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.25 }}>
+              {TRIGGER_EVENT_LABELS[lastTriggerMeta.event] || lastTriggerMeta.event}
+            </div>
+            <div style={{ fontSize: 11, color: '#475569', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
+              {formatWallClock(lastTriggerMeta.at)}
+            </div>
+          </div>
+        ) : null}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <EventBtn
             id="trigger-halftime"
             label="Halftime break"
             color="#F59E0B"
-            flash={flashBtn === 'halftime'}
+            selected={activeTriggerEvent === 'halftime'}
+            pulse={pulsingTriggerEvent === 'halftime'}
             onClick={() => handleTriggerEvent('halftime')}
           />
           <EventBtn
             id="trigger-goal"
             label="Goal scored"
             color="#22C55E"
-            flash={flashBtn === 'goal'}
+            selected={activeTriggerEvent === 'goal'}
+            pulse={pulsingTriggerEvent === 'goal'}
             onClick={() => handleTriggerEvent('goal')}
           />
           <EventBtn
             id="trigger-rain"
             label="Rain delay"
             color="#3B82F6"
-            flash={flashBtn === 'rain_delay'}
+            selected={activeTriggerEvent === 'rain_delay'}
+            pulse={pulsingTriggerEvent === 'rain_delay'}
             onClick={() => handleTriggerEvent('rain_delay')}
           />
           <EventBtn
             id="trigger-whistle"
             label="Final whistle"
             color="#EF4444"
-            flash={flashBtn === 'post_match'}
+            selected={activeTriggerEvent === 'post_match'}
+            pulse={pulsingTriggerEvent === 'post_match'}
             onClick={() => handleTriggerEvent('post_match')}
           />
         </div>
+        {activeTriggerEvent ? (
+          <div
+            style={{
+              marginTop: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontSize: 11, color: '#475569', lineHeight: 1.3 }}>
+              Selected:{' '}
+              <span style={{ fontWeight: 700, color: '#0F172A' }}>
+                {TRIGGER_EVENT_LABELS[activeTriggerEvent]}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={onClearActiveTrigger}
+              style={{
+                flexShrink: 0,
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#64748B',
+                background: '#F1F5F9',
+                border: '1px solid #E2E8F0',
+                borderRadius: 8,
+                padding: '6px 10px',
+                cursor: 'pointer',
+              }}
+            >
+              Deselect
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: 0 }} />
@@ -412,7 +487,6 @@ export function OperatorDashboardRightColumn({
           id="demo-route"
           label={demoRouteLoading ? '⏳ Calculating…' : '🗺️ Demo route'}
           color="#8B5CF6"
-          flash={false}
           onClick={handleDemoRoute}
         />
         {activeRoute && (

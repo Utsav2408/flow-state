@@ -83,5 +83,15 @@ export const useStore = create((set) => ({
       unsub3();
       unsub4();
     };
-  }
+  },
+
+  /** Operator dashboard is outside FanAppBootstrap; subscribe to RTDB alerts only. */
+  subscribeToAlerts: () => {
+    if (!db) return () => {};
+    const unsub = onValue(ref(db, 'alerts'), (snapshot) => {
+      const data = snapshot.val();
+      if (data) set({ alerts: Array.isArray(data) ? data : Object.values(data) });
+    });
+    return () => unsub();
+  },
 }));

@@ -7,7 +7,7 @@ export const BottomNav = () => {
   const { isAdmin, loading } = useAuth();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] py-2 px-6 flex justify-between items-center">
+    <div className="w-full bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 pb-safe z-50 rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] py-2 px-6 flex justify-between items-center mt-auto shrink-0 cursor-pointer">
       <NavItem to="/" icon={<Home size={24} />} label="Home" />
       <NavItem to="/map" icon={<MapIcon size={24} />} label="Map" />
       <NavItem to="/group" icon={<Users size={24} />} label="Group" />

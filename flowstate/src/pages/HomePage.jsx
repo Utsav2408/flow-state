@@ -247,7 +247,7 @@ export const HomePage = () => {
   // ─── Render ─────────────────────────────────────────────────────────
   if (isEgress) {
     return (
-      <div className="pb-24 min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
+      <div className="min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
         <header className="mb-6">
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Match ended - RCB won!</h1>
           <p className="text-sm text-gray-500 font-medium mt-0.5">Your personalized exit plan is ready</p>
@@ -318,7 +318,7 @@ export const HomePage = () => {
   }
 
   return (
-    <div className="pb-24 min-h-screen bg-stone-50 px-5 pt-12 font-sans">
+    <div className="min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <header className="flex justify-between items-start mb-6 gap-3">

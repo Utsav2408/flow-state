@@ -44,10 +44,15 @@ export const OperatorPage = () => {
   const [generatedAlerts, setGeneratedAlerts] = useState([]);
   const [demoRouteLoading, setDemoRouteLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false });
-  const [flashBtn, setFlashBtn] = useState(null);
+  const [activeTriggerEvent, setActiveTriggerEvent] = useState(null);
+  const [pulsingTriggerEvent, setPulsingTriggerEvent] = useState(null);
+  const [lastTriggerMeta, setLastTriggerMeta] = useState(null);
+  const pulseTimerRef = useRef(null);
   const prevAvgWaitRef = useRef(null);
   const nashAlertCooldownRef = useRef(0);
   const comfortAlertCooldownRef = useRef({});
+  const highDensityCooldownRef = useRef({});
+  const standWaitCooldownRef = useRef({});
 
   const updateSimSpeed = useCallback((spd) => {
     setSpeed(spd);
@@ -98,21 +103,29 @@ export const OperatorPage = () => {
 
     zones.forEach((zone, zoneId) => {
       if (zone.density > 85) {
-        newAlerts.push({
-          message: `Zone ${zoneId} at ${zone.density}%. High density detected.`,
-          severity: 'red',
-          timestamp: now,
-        });
+        const last = highDensityCooldownRef.current[zoneId] || 0;
+        if (now - last > 25000) {
+          newAlerts.push({
+            message: `Zone ${zoneId} at ${zone.density}%. High density detected.`,
+            severity: 'red',
+            timestamp: now,
+          });
+          highDensityCooldownRef.current[zoneId] = now;
+        }
       }
     });
 
     stands.forEach((stand, standId) => {
       if (stand.waitTime > 8) {
-        newAlerts.push({
-          message: `Stand ${standId} queue rising to ${stand.waitTime}min.`,
-          severity: 'amber',
-          timestamp: now,
-        });
+        const last = standWaitCooldownRef.current[standId] || 0;
+        if (now - last > 25000) {
+          newAlerts.push({
+            message: `Stand ${standId} queue rising to ${stand.waitTime}min.`,
+            severity: 'amber',
+            timestamp: now,
+          });
+          standWaitCooldownRef.current[standId] = now;
+        }
       }
     });
 
@@ -144,10 +157,24 @@ export const OperatorPage = () => {
     setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 2200);
   }, []);
 
+  const subscribeToAlerts = useStore((state) => state.subscribeToAlerts);
+
   useEffect(() => {
     startSimulation();
     queueMicrotask(() => updateSimSpeed(5));
   }, [updateSimSpeed]);
+
+  useEffect(() => {
+    const unsub = subscribeToAlerts();
+    return unsub;
+  }, [subscribeToAlerts]);
+
+  useEffect(
+    () => () => {
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -159,7 +186,11 @@ export const OperatorPage = () => {
     return () => clearInterval(interval);
   }, [speed, generateAlerts]);
 
-  const handleTriggerEvent = (event) => {
+  const clearActiveTrigger = useCallback(() => {
+    setActiveTriggerEvent(null);
+  }, []);
+
+  const handleTriggerEvent = useCallback((event) => {
     triggerEvent(event);
     const labels = {
       halftime: 'Halftime break triggered',
@@ -174,8 +205,15 @@ export const OperatorPage = () => {
       post_match: 'Final whistle — egress routing activated.',
     };
 
-    setFlashBtn(event);
-    setTimeout(() => setFlashBtn(null), 500);
+    const now = Date.now();
+    setActiveTriggerEvent(event);
+    setLastTriggerMeta({ event, at: now });
+    setPulsingTriggerEvent(event);
+    if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    pulseTimerRef.current = setTimeout(() => {
+      setPulsingTriggerEvent(null);
+      pulseTimerRef.current = null;
+    }, 1100);
 
     showToast(labels[event] || `Event: ${event}`);
 
@@ -185,12 +223,12 @@ export const OperatorPage = () => {
           message: alertLabels[event] || `Event: ${event}`,
           severity:
             event === 'goal' ? 'green' : event === 'post_match' ? 'blue' : 'amber',
-          timestamp: Date.now(),
+          timestamp: now,
         },
         ...prev,
       ].slice(0, MAX_ALERTS),
     );
-  };
+  }, [showToast]);
 
   const handleDemoRoute = async () => {
     setDemoRouteLoading(true);
@@ -237,13 +275,13 @@ export const OperatorPage = () => {
   const matchLabel = MATCH_STATES[matchPhase] || 'Live';
   const matchColor = MATCH_STATE_COLORS[matchPhase] || '#22c55e';
 
-  const allAlerts = [
-    ...generatedAlerts,
-    ...storeAlerts.map((a) => ({
+  const allAlerts = useMemo(() => {
+    const fromStore = storeAlerts.map((a) => ({
       ...a,
       severity: a.severity === 'high' ? 'red' : a.severity === 'low' ? 'green' : 'amber',
-    })),
-  ].slice(0, MAX_ALERTS);
+    }));
+    return [...generatedAlerts, ...fromStore].slice(0, MAX_ALERTS);
+  }, [generatedAlerts, storeAlerts]);
 
   const nearestWait = useMemo(() => {
     let best = 99;
@@ -332,7 +370,10 @@ export const OperatorPage = () => {
           aiActionTitle={aiActionTitle}
           speed={speed}
           updateSimSpeed={updateSimSpeed}
-          flashBtn={flashBtn}
+          activeTriggerEvent={activeTriggerEvent}
+          pulsingTriggerEvent={pulsingTriggerEvent}
+          lastTriggerMeta={lastTriggerMeta}
+          onClearActiveTrigger={clearActiveTrigger}
           handleTriggerEvent={handleTriggerEvent}
           demoRouteLoading={demoRouteLoading}
           handleDemoRoute={handleDemoRoute}
@@ -354,6 +395,11 @@ export const OperatorPage = () => {
         @keyframes alertSlideIn {
           from { opacity: 0; transform: translateY(-8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes eventBtnPulse {
+          0% { filter: brightness(1); }
+          40% { filter: brightness(1.15); }
+          100% { filter: brightness(1); }
         }
       `}</style>
     </div>

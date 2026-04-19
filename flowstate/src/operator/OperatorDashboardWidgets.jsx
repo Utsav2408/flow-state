@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getComfortColor } from '../intelligence/comfortScoring';
 import { formatTimeAgo } from './operatorMetrics';
 
@@ -31,9 +31,11 @@ export const OperatorToast = ({ message, visible }) => (
 
 export const AlertFeed = ({ alerts }) => {
   const scrollRef = useRef(null);
+  const topKey =
+    alerts.length > 0 ? `${alerts[0].timestamp ?? ''}\0${alerts[0].message ?? ''}` : '';
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [alerts]);
+  }, [topKey, alerts.length]);
 
   const dotColor = { red: '#EF4444', amber: '#F59E0B', green: '#22C55E', blue: '#3B82F6' };
 
@@ -169,41 +171,51 @@ export const SpeedBtn = ({ label, active, onClick }) => (
   </button>
 );
 
-export const EventBtn = ({ id, label, color, onClick, flash }) => (
-  <button
-    id={id}
-    type="button"
-    onClick={onClick}
-    style={{
-      width: '100%',
-      padding: '11px 0',
-      borderRadius: 12,
-      border: `1.5px solid ${color}22`,
-      background: flash ? `${color}40` : `${color}0d`,
-      color,
-      fontWeight: 700,
-      fontSize: 14,
-      cursor: 'pointer',
-      letterSpacing: '0.01em',
-      transition: 'background 0.2s, transform 0.1s, box-shadow 0.2s',
-      boxShadow: flash ? `0 0 12px ${color}30` : 'none',
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = `${color}20`;
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = flash ? `${color}40` : `${color}0d`;
-    }}
-    onMouseDown={(e) => {
-      e.currentTarget.style.transform = 'scale(0.97)';
-    }}
-    onMouseUp={(e) => {
-      e.currentTarget.style.transform = 'scale(1)';
-    }}
-  >
-    {label}
-  </button>
-);
+export const EventBtn = ({ id, label, color, onClick, selected, pulse }) => {
+  const [hover, setHover] = useState(false);
+  const bg = selected ? `${color}28` : pulse ? `${color}42` : hover ? `${color}20` : `${color}0d`;
+  const border = selected ? `2px solid ${color}` : `1.5px solid ${color}33`;
+  const shadow = selected
+    ? `0 0 0 3px ${color}28, 0 3px 10px ${color}22`
+    : pulse
+      ? `0 0 20px ${color}55, 0 0 0 1px ${color}44`
+      : 'none';
+
+  return (
+    <button
+      id={id}
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      style={{
+        width: '100%',
+        padding: '11px 0',
+        borderRadius: 12,
+        border,
+        background: bg,
+        color,
+        fontWeight: 700,
+        fontSize: 14,
+        cursor: 'pointer',
+        letterSpacing: '0.01em',
+        transition:
+          'background 0.2s, transform 0.1s, box-shadow 0.25s, border-color 0.2s',
+        boxShadow: shadow,
+        animation: pulse ? 'eventBtnPulse 1s ease-out' : 'none',
+      }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onMouseDown={(e) => {
+        e.currentTarget.style.transform = 'scale(0.97)';
+      }}
+      onMouseUp={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+    >
+      {label}
+    </button>
+  );
+};
 
 export const FanAppPreview = ({
   comfortScore,

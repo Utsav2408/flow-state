@@ -40,7 +40,7 @@ export const MapPage = () => {
   });
 
   return (
-    <div className="pb-24 h-screen flex flex-col bg-stone-50 dark:bg-zinc-950">
+    <div className="h-screen flex flex-col bg-stone-50 dark:bg-zinc-950">
       <header className="px-6 pt-10 pb-2 flex justify-between items-center z-10 shrink-0">
         <div className="flex items-center gap-4 min-w-0">
           <button

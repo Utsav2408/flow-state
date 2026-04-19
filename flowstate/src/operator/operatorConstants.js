@@ -18,6 +18,14 @@ export const MATCH_STATE_COLORS = {
   goal: '#ef4444',
 };
 
+/** Operator → triggerEvent() keys (crowdSimulator) */
+export const TRIGGER_EVENT_LABELS = {
+  halftime: 'Halftime break',
+  goal: 'Goal scored',
+  rain_delay: 'Rain delay',
+  post_match: 'Final whistle',
+};
+
 /** Zone group → Firebase zone ids (dashboard zone bars + alert logic) */
 export const ZONE_GROUPS = {
   'A1-A4': ['A1', 'A2', 'A3', 'A4'],

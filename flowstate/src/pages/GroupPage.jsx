@@ -70,7 +70,7 @@ export const GroupPage = () => {
   };
 
   return (
-    <div className="pb-24 min-h-screen bg-stone-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-stone-50 font-sans flex flex-col">
       <header className="px-5 pt-12 pb-4 flex items-center justify-between shadow-sm bg-white/50 backdrop-blur-md sticky top-0 z-20">
         <button type="button" onClick={() => navigate(-1)} className="p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform">
           <ChevronLeft size={20} />
@@ -80,7 +80,7 @@ export const GroupPage = () => {
       </header>
 
       <div className="px-5 pt-4">
-        <div className="h-180 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative">
+        <div className="h-100 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative">
             <VenueMapCanvas
               filters={{ density: true, food: false, exits: false, group: true, route: false }}
               showMeetupCentroid
