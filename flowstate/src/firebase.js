@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { getDatabase, ref, onValue, set, update } from 'firebase/database';
 import { ZONE_TARGETS } from './models/venueLayout';
 
 const firebaseConfig = {
@@ -40,7 +40,7 @@ if (canInit) {
 
 export const googleProvider = new GoogleAuthProvider();
 
-export { db, auth, ref, onValue, set };
+export { db, auth, ref, onValue, set, update };
 
 /** Destructive: overwrites simulation, zones, stands, alerts. Enable only via VITE_SEED_DATABASE=true */
 export async function populateInitialData() {
