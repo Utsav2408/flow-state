@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { ZONE_TARGETS } from './models/venueLayout';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? '',
@@ -68,7 +69,7 @@ export async function populateInitialData() {
     if (['C4', 'C5', 'C6'].includes(z)) density = 65;
     if (['D1', 'D2', 'D3'].includes(z)) density = 58;
 
-    zonesInfo[z] = { density, name: `Zone ${z}`, capacity: 1000 };
+    zonesInfo[z] = { density, name: `Zone ${z}`, capacity: ZONE_TARGETS[z]?.capacity ?? 1000 };
   });
   await set(ref(db, 'zones'), zonesInfo);
 

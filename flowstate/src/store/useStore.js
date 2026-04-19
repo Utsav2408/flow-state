@@ -40,9 +40,9 @@ export const useStore = create((set) => ({
   },
 
   subscribeToData: () => {
-    if (!db) return;
+    if (!db) return () => {};
     
-    onValue(ref(db, 'simulation'), (snapshot) => {
+    const unsub1 = onValue(ref(db, 'simulation'), (snapshot) => {
       const data = snapshot.val();
       if (data)
         set((state) => ({
@@ -50,7 +50,7 @@ export const useStore = create((set) => ({
         }));
     });
 
-    onValue(ref(db, 'zones'), (snapshot) => {
+    const unsub2 = onValue(ref(db, 'zones'), (snapshot) => {
       const data = snapshot.val();
       if(data) {
         const newZones = new Map(Object.entries(data));
@@ -58,7 +58,7 @@ export const useStore = create((set) => ({
       }
     });
 
-    onValue(ref(db, 'stands'), (snapshot) => {
+    const unsub3 = onValue(ref(db, 'stands'), (snapshot) => {
       const data = snapshot.val();
       if(data) {
         const newStands = new Map(Object.entries(data));
@@ -66,9 +66,16 @@ export const useStore = create((set) => ({
       }
     });
 
-    onValue(ref(db, 'alerts'), (snapshot) => {
+    const unsub4 = onValue(ref(db, 'alerts'), (snapshot) => {
       const data = snapshot.val();
       if(data) set({ alerts: Array.isArray(data) ? data : Object.values(data) });
     });
+
+    return () => {
+      unsub1();
+      unsub2();
+      unsub3();
+      unsub4();
+    };
   }
 }));

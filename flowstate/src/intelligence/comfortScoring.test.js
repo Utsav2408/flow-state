@@ -6,7 +6,14 @@ import {
   getComfortScore,
 } from './comfortScoring';
 import { COMFORT_THRESHOLDS } from '../config/comfortConfig';
-import { useStore } from '../store/useStore';
+
+// ── Test fixtures ──────────────────────────────────────────────────────────
+const defaultZones = new Map([
+  ['B4', { density: 40 }],
+  ['B5', { density: 40 }],
+  ['B6', { density: 40 }],
+]);
+const defaultStands = new Map([['S3', { waitTime: 5 }]]);
 
 describe('normalizeDensityPercent', () => {
   it('maps fraction in (0,1) to percent', () => {
@@ -47,14 +54,6 @@ describe('getComfortLabel', () => {
 describe('getComfortScore', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    useStore.setState({
-      zones: new Map([
-        ['B4', { density: 40 }],
-        ['B5', { density: 40 }],
-        ['B6', { density: 40 }],
-      ]),
-      stands: new Map([['S3', { waitTime: 5 }]]),
-    });
   });
 
   afterEach(() => {
@@ -62,17 +61,15 @@ describe('getComfortScore', () => {
   });
 
   it('returns score in 0–100 for a zone group', () => {
-    const s = getComfortScore('B4-B6');
+    const s = getComfortScore('B4-B6', defaultZones, defaultStands);
     expect(s).toBeGreaterThanOrEqual(0);
     expect(s).toBeLessThanOrEqual(100);
   });
 
   it('handles single zone id', () => {
-    useStore.setState({
-      zones: new Map([['C1', { density: 30 }]]),
-      stands: new Map(),
-    });
-    const s = getComfortScore('C1');
+    const zones = new Map([['C1', { density: 30 }]]);
+    const stands = new Map();
+    const s = getComfortScore('C1', zones, stands);
     expect(s).toBeGreaterThanOrEqual(0);
     expect(s).toBeLessThanOrEqual(100);
   });

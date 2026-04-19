@@ -1,10 +1,10 @@
-import { useStore } from '../store/useStore';
 import {
   COMFORT_THRESHOLDS,
   COMFORT_WEIGHTS,
   WAIT_NORM_MINUTES,
   DEFAULT_DENSITY_GUESS,
 } from '../config/comfortConfig';
+import graph from '../models/venueGraph';
 
 export { COMFORT_THRESHOLDS } from '../config/comfortConfig';
 
@@ -29,13 +29,11 @@ export function normalizeDensityPercent(raw) {
  *   noisePenalty = min(density × 1.2, 100)
  *
  * @param {string} zoneId - Individual zone (e.g. 'B4') or zone group (e.g. 'B4-B6')
+ * @param {Map<string, {density?: number}>} zones - Zone data map (from the store slice)
+ * @param {Map<string, {waitTime?: number}>} stands - Stand data map (from the store slice)
  * @returns {number} Comfort score 0-100
  */
-export function getComfortScore(zoneId) {
-  const store = useStore.getState();
-  const zones = store.zones;
-  const stands = store.stands;
-
+export function getComfortScore(zoneId, zones, stands) {
   let density = 0;
   let count = 0;
 
@@ -59,11 +57,47 @@ export function getComfortScore(zoneId) {
   }
 
   let nearestWait = WAIT_NORM_MINUTES;
-  stands.forEach((stand) => {
-    if (stand.waitTime !== undefined && stand.waitTime !== null && stand.waitTime < nearestWait) {
-      nearestWait = stand.waitTime;
+  let hasLocalStands = false;
+
+  const zonesToCheck = [];
+  if (zoneId && zoneId.includes('-')) {
+    const parts = zoneId.split('-');
+    const prefix = parts[0][0];
+    const startNum = parseInt(parts[0].slice(1));
+    const endNum = parseInt(parts[1].slice(1));
+    for (let i = startNum; i <= endNum; i++) {
+      zonesToCheck.push(`${prefix}${i}`);
+    }
+  } else if (zoneId) {
+    zonesToCheck.push(zoneId);
+  }
+
+  const localStands = new Set();
+  for (const z of zonesToCheck) {
+    const neighbors = graph.getNeighbors(z);
+    for (const edge of neighbors) {
+      if (graph.nodes.has(edge.node) && graph.nodes.get(edge.node).type === 'stand') {
+        localStands.add(edge.node);
+      }
+    }
+  }
+
+  localStands.forEach(standId => {
+    hasLocalStands = true;
+    const standData = stands.get(standId);
+    if (standData && standData.waitTime !== undefined && standData.waitTime !== null && standData.waitTime < nearestWait) {
+      nearestWait = standData.waitTime;
     }
   });
+
+  if (!hasLocalStands) {
+    // Fallback if no specific connected stands
+    stands.forEach((stand) => {
+      if (stand.waitTime !== undefined && stand.waitTime !== null && stand.waitTime < nearestWait) {
+        nearestWait = stand.waitTime;
+      }
+    });
+  }
 
   const waitPenalty = Math.min(nearestWait / WAIT_NORM_MINUTES, 1) * 100;
   const noisePenalty = Math.min(density * 1.2, 100);

@@ -10,3 +10,11 @@ export const DEFAULT_STAND_QUEUE_CAP = 200;
 
 /** Default zone node when fan location is missing (graph id, not group). */
 export const DEFAULT_FAN_GRAPH_ZONE = 'B4';
+
+/** 
+ * Simulated reroute display count constants for demo purposes. 
+ * These artificially inflate the displayed Nash reroutes to visualize the AI activity.
+ */
+export const REROUTE_DISPLAY_BASE = 280;
+export const REROUTE_DISPLAY_PER_CONFLICT = 95;
+export const REROUTE_DISPLAY_PER_REQ = 45;

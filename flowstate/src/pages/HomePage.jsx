@@ -130,12 +130,11 @@ export const HomePage = () => {
 
   const zoneId = currentFan?.location || 'B4-B6';
 
-  // ── Comfort score (reactive via Zustand) ────────────────────────────
-  const comfortScore = useMemo(() => {
-    void zones;
-    void stands;
-    return getComfortScore(zoneId);
-  }, [zones, stands, zoneId]);
+  // ── Comfort score — zones & stands passed explicitly (no store read inside) ──
+  const comfortScore = useMemo(
+    () => getComfortScore(zoneId, zones, stands),
+    [zones, stands, zoneId],
+  );
   const comfortColor = getComfortColor(comfortScore);
 
   // ── Nearest food stand ──────────────────────────────────────────────

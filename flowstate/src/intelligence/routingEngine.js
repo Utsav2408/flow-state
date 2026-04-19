@@ -6,67 +6,72 @@ import {
   NASH_BATCH_MS,
   DEFAULT_STAND_QUEUE_CAP,
   DEFAULT_FAN_GRAPH_ZONE,
+  REROUTE_DISPLAY_BASE,
+  REROUTE_DISPLAY_PER_CONFLICT,
+  REROUTE_DISPLAY_PER_REQ,
 } from '../config/routingConstants';
+import { dijkstra as runDijkstra } from './dijkstra';
 
 // ── Batch state ──────────────────────────────────────────────────────────
 let routeRequestBatch = [];
 let batchTimer = null;
 let nashStats = { totalRoutes: 0, nashRerouteCount: 0, lastBatchSize: 0 };
 
+/**
+ * Ephemeral edge-load overlay keyed by "node1|node2" (canonical order).
+ * Tracks load increments accumulated during the current Nash batch ONLY;
+ * it is never written back to the shared graph singleton, keeping simulation
+ * state isolated from the data model. Call resetEdgeLoads() between ticks
+ * or test runs to start fresh.
+ */
+const edgeLoadOverlay = new Map();
+
+/** Canonical key for an undirected edge (smaller id first). */
+function edgeKey(a, b) {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/** Return the current ephemeral load for an edge (falls back to graph value). */
+function getEdgeLoad(edgeObj, fromNode, toNode) {
+  const key = edgeKey(fromNode, toNode);
+  return edgeLoadOverlay.has(key) ? edgeLoadOverlay.get(key) : edgeObj.currentLoad;
+}
+
+/** Increment ephemeral load for an undirected edge. */
+function incrementEdgeLoad(n1, n2) {
+  const key = edgeKey(n1, n2);
+  const current = edgeLoadOverlay.get(key) ?? 0;
+  edgeLoadOverlay.set(key, Math.min(1, current + EDGE_LOAD_INCREMENT));
+}
+
+/**
+ * Reset the ephemeral edge-load overlay.
+ * Call this when the simulation resets or between test cases so that
+ * stale load data does not carry over across independent route computations.
+ */
+export function resetEdgeLoads() {
+  edgeLoadOverlay.clear();
+}
+
 // ── Dijkstra with congestion-aware weights ───────────────────────────────
+/**
+ * Dijkstra using the ephemeral load overlay rather than mutating graph edges.
+ * The shared graph singleton is read-only here; all congestion state lives in
+ * edgeLoadOverlay and is discarded when resetEdgeLoads() is called.
+ */
 function dijkstra(fromNode, toNode) {
-  const adj = graph.adjacencyList;
-  if (!adj.has(fromNode) || !adj.has(toNode)) return null;
-
-  const dist = new Map();
-  const prev = new Map();
-  const unvisited = new Set(adj.keys());
-
-  for (const n of adj.keys()) {
-    dist.set(n, Infinity);
-    prev.set(n, null);
-  }
-  dist.set(fromNode, 0);
-
-  while (unvisited.size > 0) {
-    let cur = null,
-      minD = Infinity;
-    for (const n of unvisited) {
-      if (dist.get(n) < minD) {
-        cur = n;
-        minD = dist.get(n);
-      }
-    }
-    if (cur === null || cur === toNode) break;
-    unvisited.delete(cur);
-
-    for (const edge of adj.get(cur) || []) {
-      if (!unvisited.has(edge.node)) continue;
-      const w =
-        edge.distance * (1 + Math.pow(edge.currentLoad, 2) * CONGESTION_LOAD_SQ_COEFF);
-      const alt = dist.get(cur) + w;
-      if (alt < dist.get(edge.node)) {
-        dist.set(edge.node, alt);
-        prev.set(edge.node, cur);
-      }
-    }
-  }
-
-  const path = [];
-  let c = toNode;
-  while (c !== null) {
-    path.unshift(c);
-    c = prev.get(c);
-  }
-  if (path[0] !== fromNode) return null;
-  return { path, cost: dist.get(toNode) };
+  return runDijkstra(graph.adjacencyList, fromNode, toNode, (cur, edge) => {
+    // Read from the overlay (not edge.currentLoad) so we never touch the graph.
+    const load = getEdgeLoad(edge, cur, edge.node);
+    return edge.distance * (1 + Math.pow(load, 2) * CONGESTION_LOAD_SQ_COEFF);
+  });
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 function getDestinations(destType) {
   const typeMap = { food: 'stand', restroom: 'restroom', exit: 'gate' };
   const t = typeMap[destType] || destType;
-  return Array.from(graph.nodes)
+  return Array.from(graph.nodes.values())
     .filter((n) => n.type === t)
     .map((n) => n.id);
 }
@@ -78,15 +83,19 @@ function fanGraphNode(loc) {
 }
 
 function rerouteDisplayCount(batchReroutes, batchSize) {
-  const base = 280;
-  const perConflict = 95;
-  const perReq = 45;
-  return Math.min(980, Math.max(120, base + batchReroutes * perConflict + Math.max(0, batchSize - 1) * perReq));
+  return Math.min(
+    980,
+    Math.max(
+      120,
+      REROUTE_DISPLAY_BASE +
+        batchReroutes * REROUTE_DISPLAY_PER_CONFLICT +
+        Math.max(0, batchSize - 1) * REROUTE_DISPLAY_PER_REQ
+    )
+  );
 }
 
 // ── Nash Batch Processing ────────────────────────────────────────────────
-function processNashBatch(batch) {
-  const store = useStore.getState();
+function processNashBatch(batch, storeState) {
   let batchReroutes = 0;
 
   batch.forEach((req) => {
@@ -97,14 +106,14 @@ function processNashBatch(batch) {
       return;
     }
 
-    const from = fanGraphNode(store.currentFan?.location);
+    const from = fanGraphNode(storeState.currentFan?.location);
 
     const candidates = [];
     for (const dest of dests) {
       const result = dijkstra(from, dest);
       if (!result) continue;
 
-      const sd = store.stands.get(dest);
+      const sd = storeState.stands.get(dest);
       const waitTime = sd?.waitTime ?? 5;
       const qLen = sd?.queueLen ?? 0;
       const cap = sd?.capacity ?? DEFAULT_STAND_QUEUE_CAP;
@@ -127,19 +136,9 @@ function processNashBatch(batch) {
     const closest = [...candidates].sort((a, b) => a.cost - b.cost)[0];
     if (best.dest !== closest.dest) batchReroutes++;
 
+    // Accumulate load into the ephemeral overlay — graph singleton is untouched.
     for (let i = 0; i < best.path.length - 1; i++) {
-      const n1 = best.path[i],
-        n2 = best.path[i + 1];
-      const edges1 = graph.adjacencyList.get(n1);
-      if (edges1) {
-        const e = edges1.find((ed) => ed.node === n2);
-        if (e) e.currentLoad = Math.min(1, e.currentLoad + EDGE_LOAD_INCREMENT);
-      }
-      const edges2 = graph.adjacencyList.get(n2);
-      if (edges2) {
-        const e = edges2.find((ed) => ed.node === n1);
-        if (e) e.currentLoad = Math.min(1, e.currentLoad + EDGE_LOAD_INCREMENT);
-      }
+      incrementEdgeLoad(best.path[i], best.path[i + 1]);
     }
 
     const simReroutes = rerouteDisplayCount(batchReroutes, batch.length);
@@ -181,7 +180,8 @@ export function requestRoute(fanId, destType) {
         const batch = [...routeRequestBatch];
         routeRequestBatch = [];
         batchTimer = null;
-        processNashBatch(batch);
+        const storeState = useStore.getState();
+        processNashBatch(batch, storeState);
       }, NASH_BATCH_MS);
     }
   });

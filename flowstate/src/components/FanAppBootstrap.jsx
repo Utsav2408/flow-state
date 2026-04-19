@@ -12,11 +12,13 @@ export function FanAppBootstrap({ children }) {
   useEffect(() => {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
+    let unsub = () => {};
     const run = async () => {
       await initMockData();
-      subscribeToData();
+      unsub = subscribeToData();
     };
     run();
+    return () => unsub();
   }, [initMockData, subscribeToData]);
 
   return children;

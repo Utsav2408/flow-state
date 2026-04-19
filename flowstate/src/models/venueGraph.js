@@ -1,37 +1,35 @@
 import { CONGESTION_LOAD_SQ_COEFF } from '../config/routingConstants';
+import { dijkstra as runDijkstra } from '../intelligence/dijkstra';
+import { getNodeCanvasPos } from './venueLayout';
 
 export class VenueGraph {
   constructor() {
     this.adjacencyList = new Map();
-    this.nodes = new Set();
+    this.nodes = new Map();
   }
 
   addNode(nodeId, type, metadata = {}) {
     if (!this.adjacencyList.has(nodeId)) {
       this.adjacencyList.set(nodeId, []);
-      this.nodes.add({ id: nodeId, type, ...metadata });
+      this.nodes.set(nodeId, { id: nodeId, type, ...metadata });
     }
   }
 
-  addEdge(node1, node2, distance, capacity, currentLoad = 0) {
+  addEdge(node1, node2, distanceFallback, capacity, currentLoad = 0) {
     if (this.adjacencyList.has(node1) && this.adjacencyList.has(node2)) {
+      const pos1 = getNodeCanvasPos(node1);
+      const pos2 = getNodeCanvasPos(node2);
+      let distance = distanceFallback;
+      if (pos1 && pos2) {
+        distance = Math.round(Math.hypot(pos1.x - pos2.x, pos1.y - pos2.y) / 5);
+        if (distance < 1) distance = 1;
+      }
       this.adjacencyList.get(node1).push({ node: node2, distance, capacity, currentLoad });
       this.adjacencyList.get(node2).push({ node: node1, distance, capacity, currentLoad });
     }
   }
 
-  updateEdgeLoad(node1, node2, load) {
-    const edges1 = this.adjacencyList.get(node1);
-    if (edges1) {
-      const edge = edges1.find(e => e.node === node2);
-      if (edge) edge.currentLoad = load;
-    }
-    const edges2 = this.adjacencyList.get(node2);
-    if (edges2) {
-      const edge = edges2.find(e => e.node === node1);
-      if (edge) edge.currentLoad = load;
-    }
-  }
+
 
   getWeight(edge) {
     return edge.distance * (1 + Math.pow(edge.currentLoad, 2) * CONGESTION_LOAD_SQ_COEFF);
@@ -42,64 +40,16 @@ export class VenueGraph {
   }
 
   getAllZones() {
-    return Array.from(this.nodes).filter(n => n.type === 'zone');
+    return Array.from(this.nodes.values()).filter(n => n.type === 'zone');
   }
 
   getAllStands() {
-    return Array.from(this.nodes).filter(n => n.type === 'stand');
+    return Array.from(this.nodes.values()).filter(n => n.type === 'stand');
   }
 
   getShortestPath(fromNode, toNode) {
-    if (!this.adjacencyList.has(fromNode) || !this.adjacencyList.has(toNode)) return null;
-
-    const distances = new Map();
-    const previous = new Map();
-    const unvisited = new Set(this.adjacencyList.keys());
-
-    for (const node of this.adjacencyList.keys()) {
-      distances.set(node, Infinity);
-      previous.set(node, null);
-    }
-    distances.set(fromNode, 0);
-
-    while (unvisited.size > 0) {
-      let current = null;
-      let minDistance = Infinity;
-
-      for (const node of unvisited) {
-        if (distances.get(node) < minDistance) {
-          current = node;
-          minDistance = distances.get(node);
-        }
-      }
-
-      if (current === null || current === toNode) break;
-
-      unvisited.delete(current);
-
-      const neighbors = this.adjacencyList.get(current);
-      for (const edge of neighbors) {
-        if (unvisited.has(edge.node)) {
-          const weight = this.getWeight(edge);
-          const newDistance = distances.get(current) + weight;
-          
-          if (newDistance < distances.get(edge.node)) {
-            distances.set(edge.node, newDistance);
-            previous.set(edge.node, current);
-          }
-        }
-      }
-    }
-
-    const path = [];
-    let current = toNode;
-    while (current !== null) {
-      path.unshift(current);
-      current = previous.get(current);
-    }
-
-    if (path[0] === fromNode) return path;
-    return null; // Path not found
+    const result = runDijkstra(this.adjacencyList, fromNode, toNode, (cur, edge) => this.getWeight(edge));
+    return result ? result.path : null;
   }
 }
 
