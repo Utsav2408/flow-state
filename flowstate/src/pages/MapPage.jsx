@@ -39,7 +39,7 @@ export const MapPage = () => {
 
   return (
     <div className="pb-24 h-screen flex flex-col bg-stone-50 dark:bg-zinc-950">
-      <header className="px-6 pt-12 pb-4 flex justify-between items-center z-10 shrink-0">
+      <header className="px-6 pt-10 pb-2 flex justify-between items-center z-10 shrink-0">
         <div className="flex items-center gap-4 min-w-0">
           <button
             type="button"
@@ -65,7 +65,7 @@ export const MapPage = () => {
         </div>
       </header>
 
-      <div className="px-6 py-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0 z-10">
+      <div className="px-6 py-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0 z-10">
         {['density', 'food', 'restrooms', 'exits'].map(f => (
           <button 
             key={f}
@@ -77,18 +77,18 @@ export const MapPage = () => {
         ))}
       </div>
 
-      <div className="flex-1 px-6 py-4 relative min-h-0">
+      <div className="flex-1 px-4 py-2 relative min-h-0">
         <VenueMapCanvas filters={filters} />
       </div>
 
-      <div className="px-6 shrink-0 flex gap-4 justify-center items-center text-sm font-semibold text-gray-600 dark:text-gray-400 mb-6">
+      <div className="px-6 shrink-0 flex gap-4 justify-center items-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#9FE1CB]"></span> Low</div>
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#FAC775]"></span> Medium</div>
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#F09595]"></span> High</div>
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#3B82F6]"></span> Food stand</div>
       </div>
 
-      <div className="px-6 shrink-0 mb-4">
+      <div className="px-6 shrink-0 mb-2">
         <div className="bg-[#F5F5F0] dark:bg-zinc-900 rounded-3xl p-5 flex justify-between shadow-inner items-center">
           <div>
             <div className="text-gray-600 dark:text-gray-400 mb-1">Quietest zone: <span className="font-bold text-gray-900 dark:text-white capitalize">{quietestZone.name.replace('Zone ', '')}</span></div>
