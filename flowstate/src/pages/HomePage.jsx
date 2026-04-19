@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { getComfortScore, getComfortColor } from '../intelligence/comfortScoring';
+import { getComfortScore, getComfortColor, normalizeDensityPercent } from '../intelligence/comfortScoring';
 import { requestRoute, getNashStats } from '../intelligence/routingEngine';
 import { BottomNav } from '../components/Shared';
 import { useAuth } from '../auth/useAuth';
@@ -79,6 +79,7 @@ export const HomePage = () => {
   const stands = useStore(s => s.stands);
   const simState = useStore(s => s.simState);
   const setActiveRoute = useStore(s => s.setActiveRoute);
+  const nashRoutingEpoch = useStore(s => s.nashRoutingEpoch);
 
   const [routing, setRouting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(480); // 8 mins
@@ -95,18 +96,23 @@ export const HomePage = () => {
   const zoneId = currentFan?.location || 'B4-B6';
 
   // ── Comfort score (reactive via Zustand) ────────────────────────────
-  const comfortScore = useMemo(() => getComfortScore(zoneId), [zones, stands, zoneId]);
+  const comfortScore = useMemo(() => {
+    void zones;
+    void stands;
+    return getComfortScore(zoneId);
+  }, [zones, stands, zoneId]);
   const comfortColor = getComfortColor(comfortScore);
 
   // ── Nearest food stand ──────────────────────────────────────────────
   const nearestFood = useMemo(() => {
-    let best = { id: '--', waitTime: 99 };
+    let best = null;
     stands.forEach((s, id) => {
-      if (s.waitTime !== undefined && s.waitTime < best.waitTime) {
-        best = { id, waitTime: s.waitTime };
-      }
+      const w = s.waitTime;
+      if (w === undefined || w === null || Number.isNaN(Number(w))) return;
+      const wt = Number(w);
+      if (best === null || wt < best.waitTime) best = { id, waitTime: wt };
     });
-    return best;
+    return best ?? { id: '--', waitTime: null };
   }, [stands]);
 
   // ── Average wait across all stands ──────────────────────────────────
@@ -130,16 +136,17 @@ export const HomePage = () => {
     let total = 0, cnt = 0;
     group.forEach(z => {
       const d = zones.get(z);
-      if (d?.density !== undefined) { total += d.density; cnt++; }
+      if (d?.density !== undefined) { total += normalizeDensityPercent(d.density); cnt++; }
     });
     return cnt > 0 ? Math.round(total / cnt) : 0;
   }, [zones, zoneId]);
 
   // ── Active route count ──────────────────────────────────────────────
   const activeRouteCount = useMemo(() => {
+    void nashRoutingEpoch;
     const stats = getNashStats();
     return stats.totalRoutes || 0;
-  }, [zones]); // Re-derive when zones update
+  }, [nashRoutingEpoch]);
 
   // ── Prediction text ─────────────────────────────────────────────────
   const predictionText = useMemo(() => {
@@ -151,11 +158,11 @@ export const HomePage = () => {
 
   // ── AI Action Card logic ────────────────────────────────────────────
   const aiAction = useMemo(() => {
-    if (nearestFood.waitTime < 3) {
+    if (nearestFood.waitTime != null && nearestFood.waitTime < 3) {
       return {
         type: 'food',
         title: 'Grab food now — ideal window',
-        subtitle: `Stand ${nearestFood.id.replace('S', '')} has a ${nearestFood.waitTime} min wait (vs ${avgWait} min avg). Route avoids halftime rush. Tap to navigate.`,
+        subtitle: `Stand ${String(nearestFood.id).replace('S', '')} has a ${nearestFood.waitTime} min wait (vs ${avgWait} min avg). Route avoids halftime rush. Tap to navigate.`,
         bg: 'from-emerald-600/10 to-teal-500/10',
         border: 'border-emerald-200',
         titleColor: 'text-emerald-900',
@@ -321,7 +328,7 @@ export const HomePage = () => {
       {/* ── Stats Row ──────────────────────────────────────────────── */}
       <section className="grid grid-cols-3 gap-3 mb-6">
         <StatCard
-          value={`${nearestFood.waitTime}m`}
+          value={nearestFood.waitTime != null ? `${Math.round(nearestFood.waitTime)}m` : '—'}
           label="NEAREST FOOD"
           color="#22C55E"
         />

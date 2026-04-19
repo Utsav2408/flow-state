@@ -1,6 +1,18 @@
 import { useStore } from '../store/useStore';
 
 /**
+ * Normalize zone density to a 0–100 percentage for the comfort formula.
+ * Values in (0, 1) are treated as fractions (e.g. 0.52 → 52%).
+ * Plain integers 1–100 are left as percentages.
+ */
+export function normalizeDensityPercent(raw) {
+  if (raw == null || Number.isNaN(Number(raw))) return 50;
+  const n = Number(raw);
+  if (n > 0 && n < 1) return n * 100;
+  return n;
+}
+
+/**
  * Compute comfort score for a zone (0-100).
  *
  * Formula:
@@ -28,20 +40,20 @@ export function getComfortScore(zoneId) {
     for (let i = startNum; i <= endNum; i++) {
       const zData = zones.get(`${prefix}${i}`);
       if (zData?.density !== undefined) {
-        density += zData.density;
+        density += normalizeDensityPercent(zData.density);
         count++;
       }
     }
     density = count > 0 ? density / count : 50;
   } else {
     const zData = zones.get(zoneId);
-    density = zData?.density ?? 50;
+    density = zData?.density !== undefined ? normalizeDensityPercent(zData.density) : 50;
   }
 
   // ── Nearest stand wait time ────────────────────────────────────────
   let nearestWait = 15; // default cap
   stands.forEach((stand) => {
-    if (stand.waitTime !== undefined && stand.waitTime < nearestWait) {
+    if (stand.waitTime !== undefined && stand.waitTime !== null && stand.waitTime < nearestWait) {
       nearestWait = stand.waitTime;
     }
   });
@@ -53,6 +65,10 @@ export function getComfortScore(zoneId) {
   const comfort = Math.max(0, Math.min(100, Math.round(
     100 - (density * 0.5 + waitPenalty * 0.3 + noisePenalty * 0.2)
   )));
+
+  if (import.meta.env.DEV) {
+    console.log('[comfort]', { zoneId, density, waitPenalty, noisePenalty, comfort, nearestWait });
+  }
 
   return comfort;
 }

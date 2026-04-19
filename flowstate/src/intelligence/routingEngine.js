@@ -139,6 +139,8 @@ function processNashBatch(batch) {
       })),
     });
   });
+
+  useStore.getState().bumpNashRoutingEpoch?.();
 }
 
 // ── Public API ───────────────────────────────────────────────────────────

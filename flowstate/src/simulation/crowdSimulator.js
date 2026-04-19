@@ -13,9 +13,10 @@ const ZONE_TARGETS = {
   'B1': { x: cx, y: cy - 250, capacity: 2000 },
   'B2': { x: cx, y: cy - 250, capacity: 2000 },
   'B3': { x: cx, y: cy - 250, capacity: 2000 },
-  'B4': { x: cx + 220, y: cy - 100, capacity: 2000 },
-  'B5': { x: cx + 220, y: cy - 100, capacity: 2000 },
-  'B6': { x: cx + 220, y: cy - 100, capacity: 2000 },
+  // Higher nominal capacity so equal fan assignment yields ~45–55% occupancy (demo-friendly comfort).
+  'B4': { x: cx + 220, y: cy - 100, capacity: 4200 },
+  'B5': { x: cx + 220, y: cy - 100, capacity: 4200 },
+  'B6': { x: cx + 220, y: cy - 100, capacity: 4200 },
   'C1': { x: cx + 220, y: cy + 150, capacity: 2000 },
   'C2': { x: cx + 220, y: cy + 150, capacity: 2000 },
   'C3': { x: cx + 220, y: cy + 150, capacity: 2000 },
@@ -27,11 +28,20 @@ const ZONE_TARGETS = {
   'D3': { x: cx - 200, y: cy + 150, capacity: 2000 },
 };
 
+// All S1–S12 so RTDB `/stands/{id}/waitTime` stays in sync with the routing graph for the fan app.
 const STANDS = [
-  { id: 'S3', x: cx - 120, y: cy - 200, queue: [] },
-  { id: 'S5', x: cx - 160, y: cy + 50, queue: [] },
-  { id: 'S7', x: cx + 150, y: cy - 200, queue: [] },
-  { id: 'S12', x: cx + 160, y: cy + 60, queue: [] },
+  { id: 'S1', x: cx - 260, y: cy - 210, queue: [] },
+  { id: 'S2', x: cx - 260, y: cy - 130, queue: [] },
+  { id: 'S3', x: cx - 110, y: cy - 170, queue: [] },
+  { id: 'S4', x: cx + 40, y: cy - 260, queue: [] },
+  { id: 'S5', x: cx - 150, y: cy + 30, queue: [] },
+  { id: 'S6', x: cx - 200, y: cy + 120, queue: [] },
+  { id: 'S7', x: cx + 140, y: cy - 170, queue: [] },
+  { id: 'S8', x: cx + 200, y: cy - 100, queue: [] },
+  { id: 'S9', x: cx + 200, y: cy + 80, queue: [] },
+  { id: 'S10', x: cx + 40, y: cy + 260, queue: [] },
+  { id: 'S11', x: cx - 40, y: cy + 260, queue: [] },
+  { id: 'S12', x: cx + 155, y: cy + 40, queue: [] },
 ];
 
 const GATES = [
@@ -191,8 +201,9 @@ function updateDataStore() {
   // Update Stands
   const updatedStands = new Map(store.stands);
   STANDS.forEach(s => {
-      // 5 persons per min service rate -> waitTime ~ queue / 5
-      const waitTime = Math.ceil(s.queue.length / 5);
+      // 5 persons/min service → wait scales with queue; clamp to 1–15 min for readable fan UI.
+      const raw = Math.ceil(s.queue.length / 5);
+      const waitTime = Math.max(1, Math.min(15, raw || 1));
       const existing = updatedStands.get(s.id) || { name: `Food Stand ${s.id}`, queueLen: 0 };
       updatedStands.set(s.id, { ...existing, waitTime, queueLen: s.queue.length });
   });

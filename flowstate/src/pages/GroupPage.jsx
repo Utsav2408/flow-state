@@ -1,15 +1,49 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav } from '../components/Shared';
 import { VenueMapCanvas } from '../components/VenueMapCanvas';
-import { ChevronLeft } from 'lucide-react';
+import { Toast } from '../components/Toast';
+import { useStore } from '../store/useStore';
+import { ChevronLeft, Check } from 'lucide-react';
+
+function getLowestWaitStand(stands) {
+  let best = null;
+  stands.forEach((s, id) => {
+    const w = s.waitTime;
+    if (w === undefined || w === null) return;
+    if (!best || w < best.waitTime) best = { id, waitTime: w };
+  });
+  return best;
+}
 
 export const GroupPage = () => {
   const navigate = useNavigate();
+  const stands = useStore((s) => s.stands);
+  const [toast, setToast] = useState(null);
+  const [pingSent, setPingSent] = useState(false);
+
+  const dismissToast = useCallback(() => setToast(null), []);
+
+  const handlePing = () => {
+    setToast({ message: 'Meetup request sent to 3 members!', type: 'success' });
+    setPingSent(true);
+    setTimeout(() => setPingSent(false), 2000);
+  };
+
+  const handleSyncFood = () => {
+    const pick = getLowestWaitStand(stands) ?? { id: 'S12', waitTime: 1 };
+    const waitLabel = Math.round(Number(pick.waitTime));
+    setToast({
+      message: `Routing all 4 members to Stand ${pick.id} — ${waitLabel} min wait`,
+      type: 'info',
+    });
+    setTimeout(() => navigate('/map'), 1500);
+  };
+
   return (
     <div className="pb-24 min-h-screen bg-stone-50 font-sans flex flex-col">
       <header className="px-5 pt-12 pb-4 flex items-center justify-between shadow-sm bg-white/50 backdrop-blur-md sticky top-0 z-20">
-        <button onClick={() => navigate(-1)} className="p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform">
+        <button type="button" onClick={() => navigate(-1)} className="p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform">
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-xl font-extrabold text-gray-900 absolute left-1/2 -translate-x-1/2">My group</h1>
@@ -18,10 +52,11 @@ export const GroupPage = () => {
 
       <div className="px-5 pt-4">
         <div className="h-48 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative p-2">
-            <VenueMapCanvas filters={{ density: false, food: false, exits: false, group: true }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-12 border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-xl flex items-center justify-center">
-              <span className="text-[10px] font-bold text-blue-600">Meetup</span>
-            </div>
+            <VenueMapCanvas
+              filters={{ density: false, food: false, exits: false, group: true }}
+              disableInteraction
+              showMeetupCentroid
+            />
         </div>
 
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">4 MEMBERS</h3>
@@ -38,23 +73,46 @@ export const GroupPage = () => {
            <p className="text-[10px] font-bold text-blue-500 tracking-wider uppercase text-center mt-1">Smart Meetup Suggestion</p>
            <h4 className="text-base font-bold text-gray-900 text-center mt-1">Section B4, Aisle 3 junction</h4>
            <p className="text-xs font-medium text-gray-600 text-center mt-2 leading-relaxed">Optimal for all 4 members. Low crowd density right now. Avg walk: 45 seconds.</p>
-           <button className="w-full mt-4 bg-white border border-gray-200 text-gray-900 font-bold py-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform">
-             Ping everyone to meet here
+           <button
+             type="button"
+             onClick={handlePing}
+             className="w-full mt-4 bg-white border border-gray-200 text-gray-900 font-bold py-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform inline-flex items-center justify-center gap-2"
+           >
+             {pingSent ? (
+               <>
+                 <Check className="w-5 h-5 text-emerald-600" strokeWidth={2.5} aria-hidden />
+                 <span>Sent!</span>
+               </>
+             ) : (
+               'Ping everyone to meet here'
+             )}
            </button>
         </div>
 
         <div className="flex gap-3">
-           <button className="flex-1 bg-orange-50 text-orange-900 text-sm font-bold py-4 rounded-2xl border border-orange-100 flex flex-col items-center gap-2 active:scale-95 transition-transform">
+           <button
+             type="button"
+             onClick={handleSyncFood}
+             className="flex-1 bg-orange-50 text-orange-900 text-sm font-bold py-4 rounded-2xl border border-orange-100 flex flex-col items-center gap-2 active:scale-95 transition-transform"
+           >
              <span className="text-xl">🍔</span>
              <span>Sync food run</span>
            </button>
-           <button className="flex-1 bg-purple-50 text-purple-900 text-sm font-bold py-4 rounded-2xl border border-purple-100 flex flex-col items-center gap-2 active:scale-95 transition-transform">
+           <button type="button" className="flex-1 bg-purple-50 text-purple-900 text-sm font-bold py-4 rounded-2xl border border-purple-100 flex flex-col items-center gap-2 active:scale-95 transition-transform">
              <span className="text-xl">💬</span>
              <span>Quick message</span>
            </button>
         </div>
       </div>
       <BottomNav />
+      {toast && (
+        <Toast
+          key={`${toast.message}-${toast.type}`}
+          message={toast.message}
+          type={toast.type}
+          onDismiss={dismissToast}
+        />
+      )}
     </div>
   );
 };

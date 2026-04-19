@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 
-export const VenueMapCanvas = ({ filters }) => {
+export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetupCentroid = false }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const offscreenCanvasRef = useRef(document.createElement('canvas'));
   const zones = useStore(state => state.zones);
   const stands = useStore(state => state.stands);
   const activeRoute = useStore(state => state.activeRoute);
+  const groupMembers = useStore(state => state.groupMembers);
   
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
@@ -41,11 +42,12 @@ export const VenueMapCanvas = ({ filters }) => {
     { id: 'S12', x: cx + 160, y: cy + 60 }
   ]), [cx, cy]);
 
-  const groupMembers = useMemo(() => ([
-    { id: 'AK', name: 'Arjun K', x: cx + 110, y: cy - 130, zone: 'Section B4, near Stand 3', color: '#F43F5E' },
-    { id: 'RS', name: 'Riya S', x: cx - 180, y: cy - 80, zone: 'Restroom block A', color: '#D97706' },
-    { id: 'PV', name: 'Pradeep V', x: cx + 30, y: cy + 180, zone: 'South concourse', color: '#10B981' }
-  ]), [cx, cy]);
+  const meetupCentroid = useMemo(() => {
+    if (!showMeetupCentroid || !groupMembers.length) return null;
+    const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
+    const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
+    return { x: sx, y: sy };
+  }, [groupMembers, showMeetupCentroid]);
 
   // ── Node position helper for route drawing ────────────────────────────
   const getNodePos = (nodeId) => {
@@ -242,8 +244,11 @@ export const VenueMapCanvas = ({ filters }) => {
       ctx.fillText('Gate 4', cx - 300, cy + 300);
     }
 
-    // "You" marker
-    const youX = cx + 150, youY = cy - 100;
+    const youM = groupMembers.find((m) => m.id === 'You');
+    const youX = youM?.x ?? cx + 150;
+    const youY = youM?.y ?? cy - 100;
+
+    // "You" marker (always; group members list also includes You for centroid math)
     ctx.beginPath();
     ctx.arc(youX, youY, 8, 0, 2 * Math.PI);
     ctx.fillStyle = '#2563EB';
@@ -257,9 +262,9 @@ export const VenueMapCanvas = ({ filters }) => {
     ctx.textBaseline = 'middle';
     ctx.fillText('You', youX, youY);
 
-    // Render Group Members
+    // Render other group members (You drawn above)
     if (filters.group !== false) {
-      groupMembers.forEach(m => {
+      groupMembers.filter((m) => m.id !== 'You').forEach(m => {
         ctx.beginPath();
         ctx.arc(m.x, m.y, 8, 0, 2 * Math.PI);
         ctx.fillStyle = m.color;
@@ -273,6 +278,28 @@ export const VenueMapCanvas = ({ filters }) => {
         ctx.textBaseline = 'middle';
         ctx.fillText(m.id, m.x, m.y);
       });
+    }
+
+    // Meetup suggestion (computed centroid — not interactive; drawn on canvas)
+    if (meetupCentroid) {
+      ctx.save();
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = '#93C5FD';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = 'rgba(219, 234, 254, 0.45)';
+      const mw = 40;
+      const mh = 24;
+      ctx.beginPath();
+      ctx.roundRect(meetupCentroid.x - mw, meetupCentroid.y - mh, mw * 2, mh * 2, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#2563EB';
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Meetup', meetupCentroid.x, meetupCentroid.y);
+      ctx.restore();
     }
 
     // ── Route overlay (animated dashed blue path) ────────────────────
@@ -372,9 +399,30 @@ export const VenueMapCanvas = ({ filters }) => {
 
     ctx.restore();
 
-  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, groupMembers, time, hoveredMember]);
+  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, groupMembers, time, hoveredMember, cx, cy, meetupCentroid]);
+
+  // React's delegated onWheel is often passive; preventDefault won't run and the page may steal the gesture.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onWheel = (e) => {
+      if (disableInteraction) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      setTransform((prev) => ({
+        ...prev,
+        scale: Math.max(0.5, Math.min(3, prev.scale * scaleFactor)),
+      }));
+    };
+
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, [disableInteraction]);
 
   const handleMouseDown = (e) => {
+    if (disableInteraction) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   };
@@ -390,7 +438,9 @@ export const VenueMapCanvas = ({ filters }) => {
     const mouseY = (e.clientY - rect.top - offsetY) / scaleFit;
     
     let isHover = false;
-    for (const m of groupMembers) {
+    const hoverTargets =
+      filters.group !== false ? groupMembers : groupMembers.filter((m) => m.id === 'You');
+    for (const m of hoverTargets) {
       if (Math.hypot(m.x - mouseX, m.y - mouseY) < 15 / scaleFit) {
         setHoveredMember(m);
         isHover = true;
@@ -401,27 +451,34 @@ export const VenueMapCanvas = ({ filters }) => {
       setHoveredMember(null);
     }
     
-    if (isHover) {
+    if (disableInteraction) {
+      containerRef.current.style.cursor = isHover ? 'pointer' : 'default';
+    } else if (isHover) {
        containerRef.current.style.cursor = 'pointer';
     } else {
        containerRef.current.style.cursor = isDragging ? 'grabbing' : 'grab';
     }
 
-    if (!isDragging) return;
+    if (!isDragging || disableInteraction) return;
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
     setTransform(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
     setDragStart({ x: e.clientX, y: e.clientY });
   };
   const handleMouseUp = () => setIsDragging(false);
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    setTransform(prev => ({ ...prev, scale: Math.max(0.5, Math.min(3, prev.scale * scaleFactor)) }));
+
+  const bumpZoom = (direction) => {
+    setTransform((prev) => ({
+      ...prev,
+      scale: Math.max(
+        0.5,
+        Math.min(3, direction === 'in' ? prev.scale * 1.12 : prev.scale / 1.12),
+      ),
+    }));
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden rounded-2xl bg-white/5" >
+    <div ref={containerRef} className={`w-full h-full relative overflow-hidden rounded-2xl bg-white/5 ${disableInteraction ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`} >
       <canvas
         ref={canvasRef}
         className="block touch-none"
@@ -429,8 +486,27 @@ export const VenueMapCanvas = ({ filters }) => {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
       />
+      {!disableInteraction && (
+        <div className="absolute top-3 right-3 z-10 flex flex-col rounded-xl bg-white/95 shadow-md border border-gray-200 overflow-hidden dark:bg-zinc-900/95 dark:border-zinc-700">
+          <button
+            type="button"
+            aria-label="Zoom in"
+            className="w-10 h-10 flex items-center justify-center text-lg font-bold leading-none text-gray-800 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-100 dark:hover:bg-zinc-800"
+            onClick={() => bumpZoom('in')}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            aria-label="Zoom out"
+            className="w-10 h-10 flex items-center justify-center text-lg font-bold leading-none text-gray-800 border-t border-gray-200 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            onClick={() => bumpZoom('out')}
+          >
+            −
+          </button>
+        </div>
+      )}
       {/* Nash badge overlay */}
       {activeRoute && (
         <div
