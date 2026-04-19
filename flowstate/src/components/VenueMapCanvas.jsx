@@ -7,6 +7,7 @@ export const VenueMapCanvas = ({ filters }) => {
   const offscreenCanvasRef = useRef(document.createElement('canvas'));
   const zones = useStore(state => state.zones);
   const stands = useStore(state => state.stands);
+  const activeRoute = useStore(state => state.activeRoute);
   
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
@@ -38,6 +39,26 @@ export const VenueMapCanvas = ({ filters }) => {
     { id: 'S7', x: cx + 150, y: cy - 200 },
     { id: 'S12', x: cx + 160, y: cy + 60 }
   ]), [cx, cy]);
+
+  // ── Node position helper for route drawing ────────────────────────────
+  const getNodePos = (nodeId) => {
+    const zoneMap = {
+      A1:'A1-A4', A2:'A1-A4', A3:'A1-A4', A4:'A1-A4',
+      B1:'B1-B3', B2:'B1-B3', B3:'B1-B3',
+      B4:'B4-B6', B5:'B4-B6', B6:'B4-B6',
+      C1:'C1-C3', C2:'C1-C3', C3:'C1-C3',
+      C4:'C4-C6', C5:'C4-C6', C6:'C4-C6',
+      D1:'D1-D3', D2:'D1-D3', D3:'D1-D3',
+    };
+    const gid = zoneMap[nodeId];
+    if (gid) {
+      const zl = zoneLocations.find(z => z.id === gid);
+      if (zl) return { x: zl.x, y: zl.y };
+    }
+    const sp = standPositions.find(s => s.id === nodeId);
+    if (sp) return { x: sp.x, y: sp.y };
+    return null;
+  };
 
   // Handle Request Animation Frame for pulse
   useEffect(() => {
@@ -214,8 +235,10 @@ export const VenueMapCanvas = ({ filters }) => {
       ctx.fillText('Gate 4', cx - 300, cy + 300);
     }
 
+    // "You" marker
+    const youX = cx + 150, youY = cy - 100;
     ctx.beginPath();
-    ctx.arc(cx + 150, cy - 100, 8, 0, 2 * Math.PI);
+    ctx.arc(youX, youY, 8, 0, 2 * Math.PI);
     ctx.fillStyle = '#2563EB';
     ctx.fill();
     ctx.strokeStyle = '#FFFFFF';
@@ -223,11 +246,61 @@ export const VenueMapCanvas = ({ filters }) => {
     ctx.stroke();
     ctx.fillStyle = '#2563EB';
     ctx.font = '14px Inter, sans-serif';
-    ctx.fillText('You', cx + 150, cy - 80);
+    ctx.fillText('You', youX, youY - 20);
+
+    // ── Route overlay (animated dashed blue path) ────────────────────
+    if (activeRoute?.path) {
+      // Build deduplicated position array starting from "You"
+      const pts = [{ x: youX, y: youY }];
+      for (const nid of activeRoute.path) {
+        const p = getNodePos(nid);
+        if (p) {
+          const last = pts[pts.length - 1];
+          if (!last || Math.abs(last.x - p.x) > 5 || Math.abs(last.y - p.y) > 5) {
+            pts.push(p);
+          }
+        }
+      }
+
+      if (pts.length >= 2) {
+        // Animated dashed line
+        ctx.save();
+        ctx.setLineDash([10, 8]);
+        ctx.lineDashOffset = -(time / 50);
+        ctx.strokeStyle = '#2563EB';
+        ctx.lineWidth = 3.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = 0.85;
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i].x, pts[i].y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Destination marker (red square)
+        const dest = pts[pts.length - 1];
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.roundRect(dest.x - 10, dest.y - 10, 20, 20, 4);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(activeRoute.destination || '', dest.x, dest.y);
+
+        ctx.restore();
+      }
+    }
 
     ctx.restore();
 
-  }, [filters, transform, zones, stands, logicalWidth, logicalHeight, zoneLocations, standPositions, time]);
+  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, time]);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -258,6 +331,29 @@ export const VenueMapCanvas = ({ filters }) => {
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
       />
+      {/* Nash badge overlay */}
+      {activeRoute && (
+        <div
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10"
+          style={{
+            background: '#ECFDF5',
+            border: '1px solid #A7F3D0',
+            borderRadius: 12,
+            padding: '8px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#065F46',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+          }}
+        >
+          <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+          Smart route: {activeRoute.nashRerouteCount} others rerouted to keep your path clear
+        </div>
+      )}
     </div>
   );
 };

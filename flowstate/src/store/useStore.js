@@ -7,10 +7,13 @@ export const useStore = create((set, get) => ({
   stands: new Map(),
   currentFan: { location: 'B4-B6', id: 'fan-1' },
   alerts: [],
+  activeRoute: null,
   
   setSimState: (newState) => set(state => ({ simState: { ...state.simState, ...newState } })),
   updateZones: (zonesMap) => set({ zones: new Map(zonesMap) }),
   updateStands: (standsMap) => set({ stands: new Map(standsMap) }),
+  setActiveRoute: (route) => set({ activeRoute: route }),
+  clearActiveRoute: () => set({ activeRoute: null }),
 
   initMockData: async () => {
     await populateInitialData();

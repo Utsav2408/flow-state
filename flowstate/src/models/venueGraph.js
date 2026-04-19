@@ -136,4 +136,32 @@ for(let i=0; i<4; i++) {
   graph.addEdge(gates[i], zones[i*4], 50, 5000, 0.1);
 }
 
+// Connect stands to nearby zones for routing
+graph.addEdge('S1', 'A1', 18, 500, 0);
+graph.addEdge('S2', 'A2', 18, 500, 0);
+graph.addEdge('S3', 'B1', 15, 500, 0);
+graph.addEdge('S3', 'B2', 15, 500, 0);
+graph.addEdge('S4', 'B3', 18, 500, 0);
+graph.addEdge('S5', 'A3', 20, 500, 0);
+graph.addEdge('S5', 'D1', 20, 500, 0);
+graph.addEdge('S6', 'D2', 18, 500, 0);
+graph.addEdge('S7', 'B4', 15, 500, 0);
+graph.addEdge('S7', 'B5', 15, 500, 0);
+graph.addEdge('S8', 'B6', 18, 500, 0);
+graph.addEdge('S9', 'C3', 18, 500, 0);
+graph.addEdge('S10', 'C4', 18, 500, 0);
+graph.addEdge('S11', 'C5', 18, 500, 0);
+graph.addEdge('S12', 'C1', 15, 500, 0);
+graph.addEdge('S12', 'C2', 15, 500, 0);
+
+// Connect restrooms to nearby zones
+graph.addEdge('R1', 'A1', 12, 300, 0);
+graph.addEdge('R2', 'B2', 12, 300, 0);
+graph.addEdge('R3', 'B5', 12, 300, 0);
+graph.addEdge('R4', 'C2', 12, 300, 0);
+graph.addEdge('R5', 'C5', 12, 300, 0);
+graph.addEdge('R6', 'D1', 12, 300, 0);
+graph.addEdge('R7', 'D3', 12, 300, 0);
+graph.addEdge('R8', 'C6', 12, 300, 0);
+
 export default graph;
