@@ -15,7 +15,8 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredMember, setHoveredMember] = useState(null);
   const requestRef = useRef();
-  
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
   // Animation pulse clock
   const [time, setTime] = useState(0);
 
@@ -44,10 +45,10 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
 
   const meetupCentroid = useMemo(() => {
     if (!showMeetupCentroid || !groupMembers.length) return null;
-    const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
-    const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
-    return { x: sx, y: sy };
-  }, [groupMembers, showMeetupCentroid]);
+    // Suggestion is "Section B4, Aisle 3 junction"
+    // Pinting exactly to B4-B6 zone coordinate slightly adjusted for "Aisle 3 junction"
+    return { x: cx + 220, y: cy - 100 };
+  }, [groupMembers.length, showMeetupCentroid, cx, cy]);
 
   // ── Node position helper for route drawing ────────────────────────────
   const getNodePos = (nodeId) => {
@@ -77,6 +78,21 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
     };
     requestRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(requestRef.current);
+  }, []);
+
+  // ResizeObserver — re-trigger the main render whenever the container resizes
+  // (fixes blank/static canvas in small containers like the Group page card)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerSize({ width, height });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   // Update offscreen canvas (Heatmap layer) when data changes
@@ -399,7 +415,7 @@ export const VenueMapCanvas = ({ filters, disableInteraction = false, showMeetup
 
     ctx.restore();
 
-  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, groupMembers, time, hoveredMember, cx, cy, meetupCentroid]);
+  }, [filters, transform, zones, stands, activeRoute, logicalWidth, logicalHeight, zoneLocations, standPositions, groupMembers, time, hoveredMember, cx, cy, meetupCentroid, containerSize]);
 
   // React's delegated onWheel is often passive; preventDefault won't run and the page may steal the gesture.
   useEffect(() => {

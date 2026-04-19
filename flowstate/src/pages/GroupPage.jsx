@@ -6,19 +6,46 @@ import { Toast } from '../components/Toast';
 import { useStore } from '../store/useStore';
 import { ChevronLeft, Check } from 'lucide-react';
 
-function getLowestWaitStand(stands) {
-  let best = null;
-  stands.forEach((s, id) => {
-    const w = s.waitTime;
-    if (w === undefined || w === null) return;
-    if (!best || w < best.waitTime) best = { id, waitTime: w };
+function getClosestWaitStand(stands, members) {
+  if (!members || members.length === 0) return { id: 'S12', waitTime: 1 };
+
+  // Logical map size config matching VenueMapCanvas
+  const cx = 400;
+  const cy = 400;
+  const standPositions = [
+    { id: 'S3', x: cx - 120, y: cy - 200 },
+    { id: 'S5', x: cx - 160, y: cy + 50 },
+    { id: 'S7', x: cx + 150, y: cy - 200 },
+    { id: 'S12', x: cx + 160, y: cy + 60 }
+  ];
+
+  // Calculate geometric centroid of all members
+  const sx = members.reduce((a, m) => a + m.x, 0) / members.length;
+  const sy = members.reduce((a, m) => a + m.y, 0) / members.length;
+
+  let closestStand = null;
+  let minDistance = Infinity;
+
+  standPositions.forEach(st => {
+    const dist = Math.hypot(st.x - sx, st.y - sy);
+    if (dist < minDistance) {
+      minDistance = dist;
+      closestStand = st;
+    }
   });
-  return best;
+
+  if (closestStand) {
+    const w = stands.get(closestStand.id)?.waitTime ?? 5;
+    return { id: closestStand.id, waitTime: w };
+  }
+
+  return { id: 'S12', waitTime: 1 };
 }
 
 export const GroupPage = () => {
   const navigate = useNavigate();
   const stands = useStore((s) => s.stands);
+  const groupMembers = useStore((s) => s.groupMembers);
   const [toast, setToast] = useState(null);
   const [pingSent, setPingSent] = useState(false);
 
@@ -31,7 +58,7 @@ export const GroupPage = () => {
   };
 
   const handleSyncFood = () => {
-    const pick = getLowestWaitStand(stands) ?? { id: 'S12', waitTime: 1 };
+    const pick = getClosestWaitStand(stands, groupMembers);
     const waitLabel = Math.round(Number(pick.waitTime));
     setToast({
       message: `Routing all 4 members to Stand ${pick.id} — ${waitLabel} min wait`,
@@ -51,10 +78,9 @@ export const GroupPage = () => {
       </header>
 
       <div className="px-5 pt-4">
-        <div className="h-48 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative p-2">
+        <div className="h-180 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative">
             <VenueMapCanvas
-              filters={{ density: false, food: false, exits: false, group: true }}
-              disableInteraction
+              filters={{ density: true, food: true, exits: false, group: true }}
               showMeetupCentroid
             />
         </div>
