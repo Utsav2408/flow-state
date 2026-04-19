@@ -184,8 +184,22 @@ export const VenueMapCanvas = ({
       }));
     };
 
+    const onTouch = (e) => {
+      if (!disableInteraction) {
+        // Prevent default touch behaviors (like scrolling) to ensure steady PointerEvent dragging on mobile iOS/Android
+        e.preventDefault();
+      }
+    };
+
     canvas.addEventListener('wheel', onWheel, { passive: false });
-    return () => canvas.removeEventListener('wheel', onWheel);
+    canvas.addEventListener('touchstart', onTouch, { passive: false });
+    canvas.addEventListener('touchmove', onTouch, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('touchstart', onTouch);
+      canvas.removeEventListener('touchmove', onTouch);
+    };
   }, [disableInteraction]);
 
   const handlePointerDown = (e) => {
