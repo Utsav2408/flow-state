@@ -7,9 +7,8 @@ import {
   normalizeDensityPercent,
   COMFORT_THRESHOLDS,
 } from '../intelligence/comfortScoring';
-import { requestRoute, getNashStats } from '../intelligence/routingEngine';
+import { getNashStats } from '../intelligence/routingEngine';
 import {
-  GATE_BY_ID,
   estimateWalkMetersFromPathCost,
   getZoneAliasesForGroup,
 } from '../models/venueLayout';
@@ -93,7 +92,6 @@ export const HomePage = () => {
 
   const [routing, setRouting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() => simState?.halftimeCountdownSeconds ?? 480);
-  const [exitPlan, setExitPlan] = useState(null);
 
   useEffect(() => {
     const seed = simState?.halftimeCountdownSeconds;
@@ -114,18 +112,6 @@ export const HomePage = () => {
   const isEgress =
     simState?.state?.toLowerCase() === 'post_match' ||
     simState?.state?.toLowerCase() === 'post-match';
-
-  useEffect(() => {
-    if (!isEgress) return undefined;
-    let cancelled = false;
-    (async () => {
-      const r = await requestRoute(currentFan?.id || 'fan-1', 'exit');
-      if (!cancelled && r) setExitPlan(r);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isEgress, currentFan?.id]);
 
   const zoneId = currentFan?.location || 'B4-B6';
 
@@ -237,79 +223,6 @@ export const HomePage = () => {
     setTimeout(() => setRouting(false), 250);
   };
 
-  // ─── Render ─────────────────────────────────────────────────────────
-  if (isEgress) {
-    return (
-      <div className="min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
-        <header className="mb-6">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Match ended - RCB won!</h1>
-          <p className="text-sm text-gray-500 font-medium mt-0.5">Your personalized exit plan is ready</p>
-        </header>
-
-        {/* Timer — ETA from exit route path cost */}
-        <div className="flex flex-col items-center justify-center my-8">
-          <div className="relative flex items-center justify-center w-48 h-48 rounded-full border-8 border-gray-100">
-             <svg className="absolute inset-0 w-full h-full -rotate-90">
-               <circle 
-                  cx="96" cy="96" r="88" 
-                  fill="none" stroke="#10B981" strokeWidth="8"
-                  strokeDasharray="553"
-                  strokeDashoffset={exitPlan?.etaMinutes != null ? String(553 * (1 - Math.min(1, exitPlan.etaMinutes / 25))) : '200'}
-                  strokeLinecap="round" />
-             </svg>
-             <div className="flex flex-col items-center">
-               <span className="text-5xl font-extrabold text-gray-900 tracking-tighter">
-                 {exitPlan?.etaMinutes != null ? exitPlan.etaMinutes : '—'}
-               </span>
-               <span className="text-sm font-semibold text-gray-500 mt-1">min est. to gate</span>
-             </div>
-          </div>
-          <p className="text-emerald-700 font-bold mt-6 text-center px-4">
-            {exitPlan?.path?.length
-              ? 'Route uses live congestion weights from the venue graph.'
-              : 'Computing your exit route…'}
-          </p>
-        </div>
-
-        {/* Gate Card */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4 flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-emerald-50 rounded-full">
-               <Map size={18} className="text-emerald-600" />
-             </div>
-             <div>
-               <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Assigned gate</p>
-               <p className="text-sm font-bold text-gray-900">
-                 {exitPlan?.destination && GATE_BY_ID[exitPlan.destination]
-                   ? `${exitPlan.destination} — ${GATE_BY_ID[exitPlan.destination].shortLabel} exit`
-                   : 'Selecting best gate…'}
-               </p>
-             </div>
-          </div>
-        </div>
-
-        {/* Wait Incentive */}
-        <div className="bg-blue-50 bg-opacity-50 rounded-2xl p-4 shadow-sm border border-blue-200 flex items-center gap-4">
-           <div className="p-3 bg-blue-100 rounded-full text-blue-600 shrink-0">
-              <UtensilsCrossed size={20} />
-           </div>
-           <div className="flex-1">
-              <p className="text-sm font-bold text-gray-900">
-                Wait {nearestFood.waitTime != null ? Math.max(1, Math.round(nearestFood.waitTime)) : '—'} min for concessions
-              </p>
-              <p className="text-xs text-gray-600 mt-0.5 font-medium">
-                Skip about {Math.min(95, Math.max(5, Math.round(100 - comfortScore)))}% of congestion vs peak.
-              </p>
-           </div>
-           <button type="button" className="bg-white border border-gray-200 text-gray-900 font-bold text-xs py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-transform shrink-0">
-             Claim
-           </button>
-        </div>
-        <BottomNav />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
 
@@ -348,6 +261,18 @@ export const HomePage = () => {
       </section>
 
       {/* ── AI Action Card ─────────────────────────────────────────── */}
+      {isEgress && (
+        <section className="mb-4 rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3">
+          <p className="text-sm font-semibold text-blue-900">
+            Match over. Your exit choreography is ready. Open the
+            {' '}
+            <span className="font-extrabold">Egress</span>
+            {' '}
+            tab below.
+          </p>
+        </section>
+      )}
+
       <section
         className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${aiAction.bg} border ${aiAction.border} cursor-pointer active:scale-[0.98] transition-transform`}
         onClick={aiAction.type === 'food' ? handleRouteRequest : undefined}

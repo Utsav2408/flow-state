@@ -223,6 +223,7 @@ export const FanAppPreview = ({
   crowdLevel,
   activeRouteCount,
   aiActionTitle,
+  matchPhase,
 }) => {
   const comfortColor = getComfortColor(comfortScore);
   const size = 50;
@@ -341,9 +342,13 @@ export const FanAppPreview = ({
           }}
         >
           <div style={{ fontSize: 6, fontWeight: 700, color: '#065F46', lineHeight: 1.3 }}>
-            {aiActionTitle || "You're in a great spot"}
+            {matchPhase === 'post_match'
+              ? 'Match over! Exit plan ready'
+              : aiActionTitle || "You're in a great spot"}
           </div>
-          <div style={{ fontSize: 5, color: '#059669', marginTop: 1 }}>Tap to navigate →</div>
+          <div style={{ fontSize: 5, color: '#059669', marginTop: 1 }}>
+            {matchPhase === 'post_match' ? 'Countdown + gate assignment' : 'Tap to navigate →'}
+          </div>
         </div>
 
         <div

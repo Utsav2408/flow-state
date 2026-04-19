@@ -30,6 +30,7 @@ export const OperatorPage = () => {
   const simState = useStore((state) => state.simState);
   const storeAlerts = useStore((state) => state.alerts);
   const setActiveRoute = useStore((state) => state.setActiveRoute);
+  const setSimState = useStore((state) => state.setSimState);
   const activeRoute = useStore((state) => state.activeRoute);
   const nashRoutingEpoch = useStore((state) => state.nashRoutingEpoch);
 
@@ -192,6 +193,9 @@ export const OperatorPage = () => {
 
   const handleTriggerEvent = useCallback((event) => {
     triggerEvent(event);
+    if (db) {
+      set(ref(db, 'simulation/state'), event).catch(() => {});
+    }
     const labels = {
       halftime: 'Halftime break triggered',
       goal: 'Goal scored!',
@@ -202,7 +206,7 @@ export const OperatorPage = () => {
       halftime: 'Halftime break triggered. Fan movement surging.',
       goal: 'Goal scored! Celebration movement spike.',
       rain_delay: 'Rain delay — fans seeking cover at stands.',
-      post_match: 'Final whistle — egress routing activated.',
+      post_match: 'Egress plan generated for 38,420 attendees. 4 waves, 4 gates.',
     };
 
     const now = Date.now();
@@ -216,6 +220,10 @@ export const OperatorPage = () => {
     }, 1100);
 
     showToast(labels[event] || `Event: ${event}`);
+    setSimState({
+      state: event,
+      postMatchElapsedSecs: event === 'post_match' ? 0 : simState?.postMatchElapsedSecs || 0,
+    });
 
     setGeneratedAlerts((prev) =>
       [
@@ -228,7 +236,7 @@ export const OperatorPage = () => {
         ...prev,
       ].slice(0, MAX_ALERTS),
     );
-  }, [showToast]);
+  }, [setSimState, showToast, simState?.postMatchElapsedSecs]);
 
   const handleDemoRoute = async () => {
     setDemoRouteLoading(true);
@@ -274,6 +282,7 @@ export const OperatorPage = () => {
   const matchPhase = stats.phase || simState.state || 'live_play';
   const matchLabel = MATCH_STATES[matchPhase] || 'Live';
   const matchColor = MATCH_STATE_COLORS[matchPhase] || '#22c55e';
+  const departedPct = Math.round((Math.max(0, stats.exitedCount || 0) / Math.max(1, stats.total || 1)) * 100);
 
   const allAlerts = useMemo(() => {
     const fromStore = storeAlerts.map((a) => ({
@@ -351,6 +360,8 @@ export const OperatorPage = () => {
           waitDelta={waitDelta}
           waitDeltaLabel={waitDeltaLabel}
           activeRoutes={activeRoutes}
+          departedPct={departedPct}
+          matchPhase={matchPhase}
           comfortScore={comfortScore}
           comfortDelta={comfortDelta}
           comfortDeltaLabel={comfortDeltaLabel}
@@ -379,6 +390,7 @@ export const OperatorPage = () => {
           handleDemoRoute={handleDemoRoute}
           activeRoute={activeRoute}
           zones={zones}
+          matchPhase={matchPhase}
         />
       </div>
 

@@ -5,8 +5,17 @@ import { ZONE_TARGETS, LOGICAL_MAP, getDefaultStandCapacity } from '../models/ve
 const NUM_FANS = 40000;
 let worker = null;
 
-let cachedStats = { activeCount: 0, walkingCount: 0, queuingCount: 0, total: NUM_FANS, phase: 'live_play' };
+let cachedStats = {
+  activeCount: 0,
+  walkingCount: 0,
+  queuingCount: 0,
+  exitingCount: 0,
+  exitedCount: 0,
+  total: NUM_FANS,
+  phase: 'live_play',
+};
 let simTimeSecs = 0;
+let postMatchElapsedSecs = 0;
 
 let lastFbWrite = 0;
 
@@ -15,6 +24,12 @@ function handleWorkerMessage(e) {
   if (type === 'tick') {
     cachedStats = payload.stats;
     simTimeSecs = payload.simTimeSecs;
+    postMatchElapsedSecs = payload.postMatchElapsedSecs ?? 0;
+    useStore.getState().setSimState({
+      state: payload.stats?.phase || 'live_play',
+      simTimeSecs: payload.simTimeSecs,
+      postMatchElapsedSecs: payload.postMatchElapsedSecs ?? 0,
+    });
     updateDataStore(payload.zoneCounts, payload.standData);
   }
 }
@@ -113,6 +128,10 @@ export function getSimStats() {
 
 export function getSimTime() {
   return simTimeSecs;
+}
+
+export function getPostMatchElapsedTime() {
+  return postMatchElapsedSecs;
 }
 
 export function getLogicalMapSize() {

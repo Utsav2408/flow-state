@@ -13,7 +13,7 @@ import {
   getOperatorNodeMapPos,
 } from './operatorMapModel';
 
-export const OperatorMapCanvas = ({ zones, stands }) => {
+export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const animRef = useRef();
@@ -226,8 +226,33 @@ export const OperatorMapCanvas = ({ zones, stands }) => {
       }
     }
 
+    if (matchPhase === 'post_match') {
+      const gateTargets = [
+        { x: cx - 355, y: cy, color: '#3B82F6' },
+        { x: cx + 350, y: cy, color: '#2563EB' },
+        { x: cx, y: cy + 258, color: '#0EA5E9' },
+        { x: cx, y: cy - 255, color: '#60A5FA' },
+      ];
+
+      OPERATOR_ZONE_LOCATIONS.forEach((zone, idx) => {
+        const gate = gateTargets[idx % gateTargets.length];
+        for (let i = 0; i < 10; i += 1) {
+          const shift = i / 10;
+          const phase = ((t / 1200) + shift) % 1;
+          const x = zone.x + (gate.x - zone.x) * phase;
+          const y = zone.y + (gate.y - zone.y) * phase;
+          ctx.beginPath();
+          ctx.arc(x, y, 2.6, 0, 2 * Math.PI);
+          ctx.fillStyle = gate.color;
+          ctx.globalAlpha = 0.28 + 0.65 * (1 - phase);
+          ctx.fill();
+        }
+      });
+      ctx.globalAlpha = 1;
+    }
+
     ctx.restore();
-  }, [zones, stands, activeRoute, cx, cy, logicalW, logicalH]);
+  }, [zones, stands, activeRoute, cx, cy, logicalW, logicalH, matchPhase]);
 
   useEffect(() => {
     const animate = () => {

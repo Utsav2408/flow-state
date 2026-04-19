@@ -4,10 +4,12 @@ import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
 import { GroupPage } from './pages/GroupPage';
 import { RewardsPage } from './pages/RewardsPage';
+import { EgressPage } from './pages/EgressPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProtectedOperator } from './components/ProtectedOperator';
 import { RequireAuth } from './components/RequireAuth';
 import { FanAppBootstrap } from './components/FanAppBootstrap';
+import { EgressTransitionGate } from './components/EgressTransitionGate';
 
 function FanShell() {
   return (
@@ -17,9 +19,11 @@ function FanShell() {
         <Route path="/map" element={<MapPage />} />
         <Route path="/group" element={<GroupPage />} />
         <Route path="/rewards" element={<RewardsPage />} />
+        <Route path="/egress" element={<EgressPage />} />
         <Route path="/profile" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <EgressTransitionGate />
     </div>
   );
 }

@@ -23,6 +23,7 @@ let simInterval = null;
 let currentPhase = 'live_play';
 let simTimeSecs = 0;
 let speedMult = 1;
+let postMatchStartedAtSimSecs = null;
 
 function generateFans() {
   const allZones = Object.keys(ZONE_TARGETS);
@@ -42,6 +43,7 @@ function generateFans() {
         destination: getJitteredPosition(ZONE_TARGETS[assignedZone]),
         speed: 0.8 + Math.random() * 0.6,
         standQueue: null,
+        exitStartAtSimSecs: null,
       };
     });
 }
@@ -102,6 +104,12 @@ function tick() {
       }
     }
 
+    if (fan.state === 'holding' && isPostMatch && fan.exitStartAtSimSecs != null) {
+      if (simTimeSecs >= fan.exitStartAtSimSecs) {
+        fan.state = 'exiting';
+      }
+    }
+
     if (fan.state === 'walking' || fan.state === 'exiting') {
       const dx = fan.destination.x - fan.position.x;
       const dy = fan.destination.y - fan.position.y;
@@ -111,6 +119,7 @@ function tick() {
         if (fan.state === 'exiting') {
           fan.position.x = fan.destination.x;
           fan.position.y = fan.destination.y;
+          fan.state = 'exited';
         } else if (fan.standQueue) {
           fan.state = 'queuing';
           fan.standQueue.queue.push(fan.id);
@@ -134,11 +143,15 @@ function tick() {
   let walkingCount = 0;
   let activeCount = 0;
   let queuingCount = 0;
+  let exitingCount = 0;
+  let exitedCount = 0;
 
   for (let i = 0; i < NUM_FANS; i++) {
     const s = fans[i].state;
     if (s === 'walking') walkingCount++;
     if (s === 'queuing') queuingCount++;
+    if (s === 'exiting') exitingCount++;
+    if (s === 'exited') exitedCount++;
     if (s !== 'exiting' && s !== 'queuing') activeCount++;
     if (s === 'seated' || s === 'walking') {
       const z = fans[i].zone;
@@ -153,8 +166,18 @@ function tick() {
     payload: {
       zoneCounts,
       standData,
-      stats: { activeCount, walkingCount, queuingCount, total: NUM_FANS, phase: currentPhase },
+      stats: {
+        activeCount,
+        walkingCount,
+        queuingCount,
+        exitingCount,
+        exitedCount,
+        total: NUM_FANS,
+        phase: currentPhase,
+      },
       simTimeSecs,
+      postMatchElapsedSecs:
+        postMatchStartedAtSimSecs == null ? 0 : Math.max(0, simTimeSecs - postMatchStartedAtSimSecs),
     }
   });
 }
@@ -202,9 +225,13 @@ self.onmessage = (e) => {
           }
         }
       } else if (payload === 'post_match') {
+        postMatchStartedAtSimSecs = simTimeSecs;
         for (let i = 0; i < NUM_FANS; i++) {
-          fans[i].state = 'exiting';
+          const waveOffsetSecs = (i % 4) * 120;
+          const startAt = simTimeSecs + waveOffsetSecs;
+          fans[i].state = waveOffsetSecs === 0 ? 'exiting' : 'holding';
           fans[i].standQueue = null;
+          fans[i].exitStartAtSimSecs = startAt;
           fans[i].destination = getJitteredPosition(assignToNearestGate(fans[i]));
         }
       }

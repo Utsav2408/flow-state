@@ -20,6 +20,8 @@ export const useStore = create((set) => ({
     clock: '19:30',
     speed: 1,
     state: 'MATCH_IN_PROGRESS',
+    simTimeSecs: 0,
+    postMatchElapsedSecs: 0,
     /** Countdown for targeted offers / halftime UI (seconds). Overwritten by RTDB `simulation`. */
     halftimeCountdownSeconds: 480,
   },

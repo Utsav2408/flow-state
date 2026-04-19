@@ -83,6 +83,8 @@ export function OperatorDashboardLeftColumn({
   waitDelta,
   waitDeltaLabel,
   activeRoutes,
+  departedPct,
+  matchPhase,
   comfortScore,
   comfortDelta,
   comfortDeltaLabel,
@@ -123,10 +125,10 @@ export function OperatorDashboardLeftColumn({
           subColor={waitDelta < 0 ? '#22C55E' : '#EF4444'}
         />
         <MetricCard
-          label="Active Routes"
-          value={activeRoutes.toLocaleString()}
-          sub="Live routing"
-          subColor="#8B5CF6"
+          label={matchPhase === 'post_match' ? 'Departed' : 'Active Routes'}
+          value={matchPhase === 'post_match' ? `${departedPct}%` : activeRoutes.toLocaleString()}
+          sub={matchPhase === 'post_match' ? 'Venue cleared' : 'Live routing'}
+          subColor={matchPhase === 'post_match' ? '#3B82F6' : '#8B5CF6'}
         />
         <MetricCard
           label="Comfort Avg"
@@ -190,7 +192,7 @@ export function OperatorDashboardLeftColumn({
           </div>
         </div>
         <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-          <OperatorMapCanvas zones={zones} stands={stands} />
+          <OperatorMapCanvas zones={zones} stands={stands} matchPhase={matchPhase} />
         </div>
       </div>
 
@@ -255,6 +257,7 @@ export function OperatorDashboardRightColumn({
   handleDemoRoute,
   activeRoute,
   zones,
+  matchPhase,
 }) {
   return (
     <div
@@ -324,6 +327,7 @@ export function OperatorDashboardRightColumn({
           crowdLevel={crowdLevel}
           activeRouteCount={fanActiveRoutes}
           aiActionTitle={aiActionTitle}
+          matchPhase={matchPhase}
         />
       </div>
 
