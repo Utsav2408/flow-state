@@ -6,6 +6,23 @@ export const OP_MAP_H = 600;
 export const OP_CX = OP_MAP_W / 2;
 export const OP_CY = OP_MAP_H / 2;
 
+/** Inner dashed ellipse on operator map — keep in sync with `OperatorMapCanvas` stroke */
+export const OP_INNER_GROUND_RX = 240;
+export const OP_INNER_GROUND_RY = 175;
+
+export function projectOutsideOperatorInnerGround(px, py, margin = 14) {
+  const dx = px - OP_CX;
+  const dy = py - OP_CY;
+  const ux = dx / OP_INNER_GROUND_RX;
+  const vy = dy / OP_INNER_GROUND_RY;
+  const s = Math.hypot(ux, vy);
+  const minS = 1 + margin / Math.min(OP_INNER_GROUND_RX, OP_INNER_GROUND_RY);
+  if (s >= minS) return { x: px, y: py };
+  if (s < 1e-9) return { x: OP_CX + OP_INNER_GROUND_RX + margin, y: OP_CY };
+  const scale = minS / Math.max(s, 1e-9);
+  return { x: OP_CX + dx * scale, y: OP_CY + dy * scale };
+}
+
 export const OPERATOR_ZONE_LOCATIONS = [
   { id: 'A1-A4', x: OP_CX - 230, y: OP_CY - 80, rx: 65, ry: 60, alias: ['A1', 'A2', 'A3', 'A4'] },
   { id: 'B1-B3', x: OP_CX, y: OP_CY - 210, rx: 90, ry: 45, alias: ['B1', 'B2', 'B3'] },
@@ -15,12 +32,17 @@ export const OPERATOR_ZONE_LOCATIONS = [
   { id: 'D1-D3', x: OP_CX - 210, y: OP_CY + 120, rx: 75, ry: 55, alias: ['D1', 'D2', 'D3'] },
 ];
 
-export const OPERATOR_STAND_POSITIONS = [
+const OPERATOR_STAND_SEEDS = [
   { id: 'S3', x: OP_CX - 110, y: OP_CY - 170 },
   { id: 'S5', x: OP_CX - 150, y: OP_CY + 30 },
   { id: 'S7', x: OP_CX + 140, y: OP_CY - 170 },
   { id: 'S12', x: OP_CX + 155, y: OP_CY + 40 },
 ];
+
+export const OPERATOR_STAND_POSITIONS = OPERATOR_STAND_SEEDS.map((s) => {
+  const p = projectOutsideOperatorInnerGround(s.x, s.y);
+  return { id: s.id, x: p.x, y: p.y };
+});
 
 export function getOperatorNodeMapPos(nodeId) {
   const zm = {

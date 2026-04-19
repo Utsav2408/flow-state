@@ -4,6 +4,7 @@ import {
   LOGICAL_MAP,
   ZONE_GROUPS,
   STAND_LAYOUT,
+  projectOutsideInnerGroundCircle,
 } from '../models/venueLayout';
 import { computeZoneLabelOffsets, computeStandLabelSides } from '../utils/mapLabelLayout';
 import {
@@ -52,11 +53,16 @@ export const VenueMapCanvas = ({
   );
 
   const meetupCentroid = useMemo(() => {
-    if (customMeetupPoint) return customMeetupPoint;
-    if (!showMeetupCentroid || !groupMembers.length) return null;
-    const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
-    const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
-    return { x: sx, y: sy };
+    let raw = null;
+    if (customMeetupPoint) {
+      raw = { x: customMeetupPoint.x, y: customMeetupPoint.y };
+    } else if (showMeetupCentroid && groupMembers.length) {
+      const sx = groupMembers.reduce((a, m) => a + m.x, 0) / groupMembers.length;
+      const sy = groupMembers.reduce((a, m) => a + m.y, 0) / groupMembers.length;
+      raw = { x: sx, y: sy };
+    }
+    if (!raw) return null;
+    return projectOutsideInnerGroundCircle(raw.x, raw.y);
   }, [groupMembers, showMeetupCentroid, customMeetupPoint]);
 
   useEffect(() => {

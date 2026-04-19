@@ -6,6 +6,8 @@ import {
   OP_MAP_H,
   OP_CX,
   OP_CY,
+  OP_INNER_GROUND_RX,
+  OP_INNER_GROUND_RY,
   OPERATOR_ZONE_LOCATIONS,
   OPERATOR_STAND_POSITIONS,
   getOperatorNodeMapPos,
@@ -76,7 +78,7 @@ export const OperatorMapCanvas = ({ zones, stands }) => {
 
     ctx.beginPath();
     ctx.setLineDash([8, 8]);
-    ctx.ellipse(cx, cy, 240, 175, 0, 0, 2 * Math.PI);
+    ctx.ellipse(cx, cy, OP_INNER_GROUND_RX, OP_INNER_GROUND_RY, 0, 0, 2 * Math.PI);
     ctx.strokeStyle = '#CBD5E1';
     ctx.lineWidth = 1.5;
     ctx.stroke();
@@ -96,6 +98,13 @@ export const OperatorMapCanvas = ({ zones, stands }) => {
     ctx.fillText('Pitch', cx, cy);
 
     const t = timeRef.current;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, logicalW, logicalH);
+    ctx.ellipse(cx, cy, OP_INNER_GROUND_RX, OP_INNER_GROUND_RY, 0, 0, 2 * Math.PI);
+    ctx.clip('evenodd');
+
     OPERATOR_ZONE_LOCATIONS.forEach((zp) => {
       let total = 0;
       let count = 0;
@@ -140,6 +149,8 @@ export const OperatorMapCanvas = ({ zones, stands }) => {
       ctx.fillStyle = density > 80 ? '#DC2626' : density > 70 ? '#D97706' : '#374151';
       ctx.fillText(`${density}%`, zp.x, zp.y + 9);
     });
+
+    ctx.restore();
 
     OPERATOR_STAND_POSITIONS.forEach((sp) => {
       const sd = stands.get(sp.id);

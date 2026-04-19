@@ -3,6 +3,7 @@ import {
   ZONE_TARGETS,
   STAND_LAYOUT,
   GATES_LAYOUT,
+  projectOutsideInnerGroundCircle,
 } from '../models/venueLayout';
 
 const NUM_FANS = 40000;
@@ -46,10 +47,11 @@ function generateFans() {
 }
 
 function getJitteredPosition(basePos) {
-  return {
+  const raw = {
     x: basePos.x + (Math.random() * 80 - 40),
     y: basePos.y + (Math.random() * 80 - 40),
   };
+  return projectOutsideInnerGroundCircle(raw.x, raw.y);
 }
 
 function assignToNearestGate(fan) {

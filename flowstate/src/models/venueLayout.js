@@ -13,7 +13,33 @@ export const LOGICAL_MAP = {
   cy: 400,
 };
 
+/** Pitch rectangle on fan map — keep in sync with `venueMapCanvasPaint` (`roundRect(cx ± half, cy ± half, ...)`) */
+export const FAN_MAP_PITCH_HALFW = 80;
+
+/**
+ * Inner dashed circle on fan map (`venueMapCanvasPaint` ellipse) — cricket ground interior.
+ * Stalls, pins, and overlays must stay outside this radius from `(cx, cy)`.
+ */
+export const FAN_MAP_INNER_GROUND_RADIUS = 220;
+
+/** Padding beyond {@link FAN_MAP_INNER_GROUND_RADIUS} for markers so icons clear the dashed ring */
+export const FAN_GROUND_RING_MARGIN = 14;
+
 const { cx, cy } = LOGICAL_MAP;
+
+/**
+ * Push a logical point outside the inner cricket-ground circle (stands / concourse only).
+ */
+export function projectOutsideInnerGroundCircle(px, py, margin = FAN_GROUND_RING_MARGIN) {
+  const dx = px - cx;
+  const dy = py - cy;
+  const d = Math.hypot(dx, dy);
+  const minR = FAN_MAP_INNER_GROUND_RADIUS + margin;
+  if (d >= minR) return { x: px, y: py };
+  if (d < 1e-9) return { x: cx + minR, y: cy };
+  const s = minR / d;
+  return { x: cx + dx * s, y: cy + dy * s };
+}
 
 /** Aggregated zones for heatmaps and labels (aliases must match Firebase zone ids). */
 export const ZONE_GROUPS = [
@@ -53,7 +79,7 @@ export const ZONE_TARGETS = {
   D3: { x: cx - 200, y: cy + 150, capacity: 2000 },
 };
 
-export const STAND_LAYOUT = [
+const STAND_LAYOUT_SEED = [
   { id: 'S1', x: cx - 260, y: cy - 210 },
   { id: 'S2', x: cx - 260, y: cy - 130 },
   { id: 'S3', x: cx - 110, y: cy - 170 },
@@ -68,6 +94,11 @@ export const STAND_LAYOUT = [
   { id: 'S12', x: cx + 155, y: cy + 40 },
 ];
 
+export const STAND_LAYOUT = STAND_LAYOUT_SEED.map((s) => {
+  const p = projectOutsideInnerGroundCircle(s.x, s.y);
+  return { id: s.id, x: p.x, y: p.y };
+});
+
 export const GATES_LAYOUT = [
   { id: 'G1', x: cx - 300, y: cy - 300, shortLabel: 'NW' },
   { id: 'G2', x: cx + 300, y: cy - 300, shortLabel: 'NE' },
@@ -76,7 +107,7 @@ export const GATES_LAYOUT = [
 ];
 
 /** Approximate map positions for routing polylines (matches graph.incident zones). */
-export const RESTROOM_LAYOUT = [
+const RESTROOM_LAYOUT_SEED = [
   { id: 'R1', x: cx - 280, y: cy - 120 },
   { id: 'R2', x: cx - 40, y: cy - 200 },
   { id: 'R3', x: cx + 180, y: cy - 40 },
@@ -86,6 +117,11 @@ export const RESTROOM_LAYOUT = [
   { id: 'R7', x: cx - 240, y: cy + 200 },
   { id: 'R8', x: cx + 80, y: cy + 220 },
 ];
+
+export const RESTROOM_LAYOUT = RESTROOM_LAYOUT_SEED.map((r) => {
+  const p = projectOutsideInnerGroundCircle(r.x, r.y);
+  return { id: r.id, x: p.x, y: p.y };
+});
 
 export const GATE_BY_ID = Object.fromEntries(GATES_LAYOUT.map((g) => [g.id, g]));
 

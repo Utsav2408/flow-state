@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { db, ref, onValue, populateInitialData } from '../firebase';
+import { projectOutsideInnerGroundCircle } from '../models/venueLayout';
 
-/** Logical map coords (see VenueMapCanvas logicalWidth / logicalHeight). Centroid of these four points is the meetup suggestion. */
-const DEFAULT_GROUP_MEMBERS = [
+/** Logical map coords (see VenueMapCanvas logicalWidth / logicalHeight). Positions snap outside the inner cricket-ground circle. */
+const GROUP_MEMBER_SEED = [
   { id: 'You', name: 'You', x: 550, y: 300, zone: 'Section B4, Row 12', color: '#2563EB' },
   { id: 'AK', name: 'Arjun K', x: 510, y: 270, zone: 'Section B4, near Stand 3', color: '#F43F5E' },
   { id: 'RS', name: 'Riya S', x: 220, y: 320, zone: 'Restroom block A', color: '#D97706' },
   { id: 'PV', name: 'Pradeep V', x: 430, y: 580, zone: 'South concourse', color: '#10B981' },
 ];
+
+const DEFAULT_GROUP_MEMBERS = GROUP_MEMBER_SEED.map((m) => {
+  const p = projectOutsideInnerGroundCircle(m.x, m.y);
+  return { ...m, x: p.x, y: p.y };
+});
 
 export const useStore = create((set) => ({
   simState: {

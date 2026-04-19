@@ -1,5 +1,12 @@
 import { DENSITY_UI } from '../config/comfortConfig';
-import { STAND_LAYOUT, GATES_LAYOUT, getNodeCanvasPos } from '../models/venueLayout';
+import {
+  LOGICAL_MAP,
+  STAND_LAYOUT,
+  GATES_LAYOUT,
+  getNodeCanvasPos,
+  FAN_MAP_PITCH_HALFW,
+  FAN_MAP_INNER_GROUND_RADIUS,
+} from '../models/venueLayout';
 
 /**
  * Fan app map: radial density blobs on an offscreen canvas (logical coords).
@@ -62,6 +69,13 @@ export function paintDensityHeatmapOffscreen(ctx, {
     ctx.fillStyle = grad;
     ctx.fill();
   });
+
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.arc(LOGICAL_MAP.cx, LOGICAL_MAP.cy, FAN_MAP_INNER_GROUND_RADIUS, 0, 2 * Math.PI);
+  ctx.fillStyle = '#000';
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
 }
 
 /**
@@ -96,14 +110,15 @@ export function paintVenueMainCanvas(
 
   ctx.beginPath();
   ctx.setLineDash([10, 10]);
-  ctx.ellipse(cx, cy, 220, 220, 0, 0, 2 * Math.PI);
+  ctx.ellipse(cx, cy, FAN_MAP_INNER_GROUND_RADIUS, FAN_MAP_INNER_GROUND_RADIUS, 0, 0, 2 * Math.PI);
   ctx.strokeStyle = '#BDBDBD';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
 
+  const ph = FAN_MAP_PITCH_HALFW;
   ctx.beginPath();
-  ctx.roundRect(cx - 80, cy - 80, 160, 160, 10);
+  ctx.roundRect(cx - ph, cy - ph, ph * 2, ph * 2, 10);
   ctx.fillStyle = '#F5F5F0';
   ctx.fill();
   ctx.strokeStyle = '#D6D6D6';
