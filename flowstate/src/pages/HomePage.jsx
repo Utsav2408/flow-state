@@ -98,7 +98,11 @@ export const HomePage = () => {
 
   useEffect(() => {
     const seed = simState?.halftimeCountdownSeconds;
-    if (seed != null && seed >= 0) setTimeLeft(seed);
+    if (seed != null && seed >= 0) {
+      queueMicrotask(() => {
+        setTimeLeft(seed);
+      });
+    }
   }, [simState?.halftimeCountdownSeconds]);
 
   useEffect(() => {
@@ -113,10 +117,7 @@ export const HomePage = () => {
     simState?.state?.toLowerCase() === 'post-match';
 
   useEffect(() => {
-    if (!isEgress) {
-      setExitPlan(null);
-      return undefined;
-    }
+    if (!isEgress) return undefined;
     let cancelled = false;
     (async () => {
       const r = await requestRoute(currentFan?.id || 'fan-1', 'exit');
@@ -171,7 +172,7 @@ export const HomePage = () => {
     if (activeRoute?.pathCost != null)
       return estimateWalkMetersFromPathCost(activeRoute.pathCost);
     return Math.min(220, Math.round(48 + crowdLevel * 1.8));
-  }, [activeRoute?.pathCost, crowdLevel]);
+  }, [activeRoute, crowdLevel]);
 
   // ── Active route count ──────────────────────────────────────────────
   const activeRouteCount = useMemo(() => {

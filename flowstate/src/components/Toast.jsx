@@ -7,7 +7,10 @@ import React, { useEffect, useRef, useState } from 'react';
 export function Toast({ message, type = 'success', onDismiss, durationMs = 3000 }) {
   const [entered, setEntered] = useState(false);
   const dismissRef = useRef(onDismiss);
-  dismissRef.current = onDismiss;
+
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     const show = requestAnimationFrame(() => setEntered(true));
