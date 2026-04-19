@@ -82,7 +82,7 @@ export const GroupPage = () => {
       <div className="px-5 pt-4">
         <div className="h-180 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative">
             <VenueMapCanvas
-              filters={{ density: true, food: true, exits: false, group: true }}
+              filters={{ density: true, food: false, exits: false, group: true, route: false }}
               showMeetupCentroid
               customMeetupPoint={meetupSuggestion.point}
             />

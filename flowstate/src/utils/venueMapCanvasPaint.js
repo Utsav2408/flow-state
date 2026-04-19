@@ -137,6 +137,7 @@ export function paintVenueMainCanvas(
   const showDensity = filters.density !== false;
   const showFood = filters.food !== false;
   const showExits = filters.exits !== false;
+  const showRoute = filters.route !== false;
 
   if (showDensity) {
     zoneLocations.forEach((zp) => {
@@ -252,7 +253,7 @@ export function paintVenueMainCanvas(
     ctx.restore();
   }
 
-  if (activeRoute?.path) {
+  if (showRoute && activeRoute?.path) {
     const pts = [{ x: youX, y: youY }];
     for (const nid of activeRoute.path) {
       const p = getNodeCanvasPos(nid);
