@@ -274,167 +274,168 @@ export const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 px-5 pt-12 font-sans flex flex-col">
-
-      {/* ── Header ─────────────────────────────────────────────────── */}
-      <header className="flex justify-between items-start mb-6 gap-3">
-        <div className="min-w-0">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">FlowState</h1>
-          <p className="text-sm text-gray-500 font-medium mt-0.5">
-            RCB vs CSK — Chinnaswamy Stadium
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-2 shrink-0 mt-1">
-          <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-xs font-bold text-red-600">Live</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            className="text-xs font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-
-      {/* ── Comfort Gauge ──────────────────────────────────────────── */}
-      <section className="text-center mb-6">
-        <ComfortGaugeHero value={comfortScore} />
-        <p className="text-sm font-medium text-gray-700 mt-1">
-          Your section comfort score
-        </p>
-        <p className="text-xs font-semibold mt-1" style={{ color: comfortColor }}>
-          {predictionText}
-        </p>
-      </section>
-
-      {/* ── AI Action Card ─────────────────────────────────────────── */}
-      {isEgress && (
-        <section className="mb-4 rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3">
-          <p className="text-sm font-semibold text-blue-900">
-            Match over. Your exit choreography is ready. Open the
-            {' '}
-            <span className="font-extrabold">Egress</span>
-            {' '}
-            tab below.
-          </p>
-        </section>
-      )}
-
-      <section
-        className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${fallbackAction.bg} border ${fallbackAction.border} cursor-pointer active:scale-[0.98] transition-transform`}
-        onClick={fallbackAction.type === 'food' ? handleRouteRequest : undefined}
-      >
-        <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
-            <ArrowUp size={18} className={fallbackAction.iconColor} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className={`font-bold text-base ${fallbackAction.titleColor}`}>
-                {fallbackAction.title}
-              </h3>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
-                <Sparkles size={10} />
-                AI-powered
-              </span>
-            </div>
-            <p className={`text-sm ${fallbackAction.subtitleColor} mt-1 leading-relaxed`}>
-              {routing ? 'Calculating optimal route…' : aiRecommendation || fallbackAction.subtitle}
+    <div className="h-screen bg-stone-50 font-sans flex flex-col">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-12">
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <header className="flex justify-between items-start mb-6 gap-3">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">FlowState</h1>
+            <p className="text-sm text-gray-500 font-medium mt-0.5">
+              RCB vs CSK — Chinnaswamy Stadium
             </p>
           </div>
-        </div>
-      </section>
-
-      {/* ── Stats Row ──────────────────────────────────────────────── */}
-      <section className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard
-          value={nearestFood.waitTime != null ? `${Math.round(nearestFood.waitTime)}m` : '—'}
-          label="NEAREST FOOD"
-          color="#22C55E"
-        />
-        <StatCard
-          value={`${crowdLevel}%`}
-          label="CROWD LEVEL"
-          color="#3B82F6"
-        />
-        <StatCard
-          value={activeRouteCount}
-          label="ACTIVE ROUTES"
-          color="#F59E0B"
-        />
-      </section>
-
-      {/* ── Quick Nav ──────────────────────────────────────────────── */}
-      <section className="grid grid-cols-4 gap-3 mb-6">
-        <QuickNavBtn
-          icon={<Map size={22} />}
-          label="Map"
-          onClick={() => navigate('/map')}
-          bg="bg-blue-50"
-          iconColor="text-blue-500"
-        />
-        <QuickNavBtn
-          icon={<UtensilsCrossed size={22} />}
-          label="Food"
-          onClick={() => navigate(`/map?dest=${encodeURIComponent(nearestFood.id !== '--' ? nearestFood.id : 'S12')}`)}
-          bg="bg-red-50"
-          iconColor="text-red-400"
-        />
-        <QuickNavBtn
-          icon={<Users size={22} />}
-          label="Group"
-          onClick={() => navigate('/group')}
-          bg="bg-orange-50"
-          iconColor="text-orange-400"
-        />
-        <QuickNavBtn
-          icon={<Star size={22} />}
-          label="Rewards"
-          onClick={() => navigate('/rewards')}
-          bg="bg-amber-50"
-          iconColor="text-amber-500"
-        />
-      </section>
-
-      {/* ── Incentive Card ────────────────────────────────────────────── */}
-      <section className="mb-6 space-y-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md">
-              Targeted Offer
-            </span>
-            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
-              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')} min left
-            </span>
-          </div>
-          <div className="flex items-center gap-3 mt-1">
-            <div className="p-2 bg-gray-50 rounded-full shrink-0">
-              <span className="text-lg">🎯</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-gray-900 text-sm truncate">
-                2x points at {nearestFood.id !== '--' ? nearestFood.id : 'nearest stand'}
-              </h4>
-              <p className="text-xs text-gray-500 mt-0.5">
-                <span className="font-bold text-emerald-600">+50 pts</span>
-                {' '}
-                • ~{promoWalkMeters}m walk est.
-              </p>
+          <div className="flex flex-col items-end gap-2 shrink-0 mt-1">
+            <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs font-bold text-red-600">Live</span>
             </div>
             <button
               type="button"
-              onClick={() => handleRouteRequest()}
-              className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2 px-5 rounded-xl transition-colors active:scale-95 shadow-sm disabled:opacity-60"
-              disabled={routing}
+              onClick={() => signOut()}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
             >
-              Go
+              Sign out
             </button>
           </div>
-        </div>
-      </section>
+        </header>
+
+        {/* ── Comfort Gauge ──────────────────────────────────────────── */}
+        <section className="text-center mb-6">
+          <ComfortGaugeHero value={comfortScore} />
+          <p className="text-sm font-medium text-gray-700 mt-1">
+            Your section comfort score
+          </p>
+          <p className="text-xs font-semibold mt-1" style={{ color: comfortColor }}>
+            {predictionText}
+          </p>
+        </section>
+
+        {/* ── AI Action Card ─────────────────────────────────────────── */}
+        {isEgress && (
+          <section className="mb-4 rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3">
+            <p className="text-sm font-semibold text-blue-900">
+              Match over. Your exit choreography is ready. Open the
+              {' '}
+              <span className="font-extrabold">Egress</span>
+              {' '}
+              tab below.
+            </p>
+          </section>
+        )}
+
+        <section
+          className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${fallbackAction.bg} border ${fallbackAction.border} cursor-pointer active:scale-[0.98] transition-transform`}
+          onClick={fallbackAction.type === 'food' ? handleRouteRequest : undefined}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
+              <ArrowUp size={18} className={fallbackAction.iconColor} />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className={`font-bold text-base ${fallbackAction.titleColor}`}>
+                  {fallbackAction.title}
+                </h3>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
+                  <Sparkles size={10} />
+                  AI-powered
+                </span>
+              </div>
+              <p className={`text-sm ${fallbackAction.subtitleColor} mt-1 leading-relaxed`}>
+                {routing ? 'Calculating optimal route…' : aiRecommendation || fallbackAction.subtitle}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Stats Row ──────────────────────────────────────────────── */}
+        <section className="grid grid-cols-3 gap-3 mb-6">
+          <StatCard
+            value={nearestFood.waitTime != null ? `${Math.round(nearestFood.waitTime)}m` : '—'}
+            label="NEAREST FOOD"
+            color="#22C55E"
+          />
+          <StatCard
+            value={`${crowdLevel}%`}
+            label="CROWD LEVEL"
+            color="#3B82F6"
+          />
+          <StatCard
+            value={activeRouteCount}
+            label="ACTIVE ROUTES"
+            color="#F59E0B"
+          />
+        </section>
+
+        {/* ── Quick Nav ──────────────────────────────────────────────── */}
+        <section className="grid grid-cols-4 gap-3 mb-6">
+          <QuickNavBtn
+            icon={<Map size={22} />}
+            label="Map"
+            onClick={() => navigate('/map')}
+            bg="bg-blue-50"
+            iconColor="text-blue-500"
+          />
+          <QuickNavBtn
+            icon={<UtensilsCrossed size={22} />}
+            label="Food"
+            onClick={() => navigate(`/map?dest=${encodeURIComponent(nearestFood.id !== '--' ? nearestFood.id : 'S12')}`)}
+            bg="bg-red-50"
+            iconColor="text-red-400"
+          />
+          <QuickNavBtn
+            icon={<Users size={22} />}
+            label="Group"
+            onClick={() => navigate('/group')}
+            bg="bg-orange-50"
+            iconColor="text-orange-400"
+          />
+          <QuickNavBtn
+            icon={<Star size={22} />}
+            label="Rewards"
+            onClick={() => navigate('/rewards')}
+            bg="bg-amber-50"
+            iconColor="text-amber-500"
+          />
+        </section>
+
+        {/* ── Incentive Card ────────────────────────────────────────────── */}
+        <section className="mb-6 space-y-3">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md">
+                Targeted Offer
+              </span>
+              <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')} min left
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="p-2 bg-gray-50 rounded-full shrink-0">
+                <span className="text-lg">🎯</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-gray-900 text-sm truncate">
+                  2x points at {nearestFood.id !== '--' ? nearestFood.id : 'nearest stand'}
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  <span className="font-bold text-emerald-600">+50 pts</span>
+                  {' '}
+                  • ~{promoWalkMeters}m walk est.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRouteRequest()}
+                className="bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2 px-5 rounded-xl transition-colors active:scale-95 shadow-sm disabled:opacity-60"
+                disabled={routing}
+              >
+                Go
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <BottomNav />
     </div>

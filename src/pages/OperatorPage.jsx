@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useStore } from '../store/useStore';
 import { db, ref, set } from '../firebase';
 import { startSimulation, triggerEvent, getSimStats } from '../simulation/crowdSimulator';
-import { requestRoute, getNashStats } from '../intelligence/routingEngine';
+import { getNashStats } from '../intelligence/routingEngine';
 import { BottomNav } from '../components/Shared';
 import { OperatorToast } from '../operator/OperatorDashboardWidgets';
 import {
@@ -29,9 +29,7 @@ export const OperatorPage = () => {
   const stands = useStore((state) => state.stands);
   const simState = useStore((state) => state.simState);
   const storeAlerts = useStore((state) => state.alerts);
-  const setActiveRoute = useStore((state) => state.setActiveRoute);
   const setSimState = useStore((state) => state.setSimState);
-  const activeRoute = useStore((state) => state.activeRoute);
   const nashRoutingEpoch = useStore((state) => state.nashRoutingEpoch);
 
   const [simTimeSecs, setSimTimeSecs] = useState(0);
@@ -43,7 +41,6 @@ export const OperatorPage = () => {
   });
   const [speed, setSpeed] = useState(5);
   const [generatedAlerts, setGeneratedAlerts] = useState([]);
-  const [demoRouteLoading, setDemoRouteLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false });
   const [activeTriggerEvent, setActiveTriggerEvent] = useState(null);
   const [pulsingTriggerEvent, setPulsingTriggerEvent] = useState(null);
@@ -238,29 +235,6 @@ export const OperatorPage = () => {
     );
   }, [setSimState, showToast, simState?.postMatchElapsedSecs]);
 
-  const handleDemoRoute = async () => {
-    setDemoRouteLoading(true);
-    try {
-      const result = await requestRoute('fan-1', 'food');
-      if (result) {
-        setActiveRoute(result);
-        showToast(`Route to ${result.destination} calculated`);
-        setGeneratedAlerts((prev) =>
-          [
-            {
-              message: `Demo route: Fan → ${result.destination} (${result.waitTime}m wait). ${result.nashRerouteCount} others rerouted.`,
-              severity: 'blue',
-              timestamp: Date.now(),
-            },
-            ...prev,
-          ].slice(0, MAX_ALERTS),
-        );
-      }
-    } finally {
-      setDemoRouteLoading(false);
-    }
-  };
-
   const fanCount = stats.total;
   const capacity = 40000;
   const capPct = Math.round((fanCount / capacity) * 100);
@@ -386,9 +360,6 @@ export const OperatorPage = () => {
           lastTriggerMeta={lastTriggerMeta}
           onClearActiveTrigger={clearActiveTrigger}
           handleTriggerEvent={handleTriggerEvent}
-          demoRouteLoading={demoRouteLoading}
-          handleDemoRoute={handleDemoRoute}
-          activeRoute={activeRoute}
           zones={zones}
           matchPhase={matchPhase}
         />

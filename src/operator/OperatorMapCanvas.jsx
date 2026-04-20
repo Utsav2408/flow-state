@@ -452,30 +452,6 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
         </button>
       </div>
 
-      {activeRoute && (
-        <div
-          style={{
-            marginTop: 8,
-            width: '100%',
-            background: '#ECFDF5',
-            border: '1px solid #A7F3D0',
-            borderRadius: 12,
-            padding: '8px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            fontSize: 12,
-            fontWeight: 600,
-            color: '#065F46',
-            textAlign: 'center',
-            boxSizing: 'border-box',
-          }}
-        >
-          <span style={{ color: '#10B981', fontSize: 15 }}>✓</span>
-          Smart route: {activeRoute.nashRerouteCount} others rerouted to keep your path clear
-        </div>
-      )}
     </div>
   );
 };

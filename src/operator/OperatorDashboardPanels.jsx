@@ -288,9 +288,6 @@ export function OperatorDashboardRightColumn({
   lastTriggerMeta,
   onClearActiveTrigger,
   handleTriggerEvent,
-  demoRouteLoading,
-  handleDemoRoute,
-  activeRoute,
   zones,
   matchPhase,
 }) {
@@ -505,47 +502,6 @@ export function OperatorDashboardRightColumn({
             </button>
           </div>
         ) : null}
-      </div>
-
-      <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: 0 }} />
-
-      <div>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: '#94A3B8',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: 8,
-          }}
-        >
-          Route Demo
-        </div>
-        <EventBtn
-          id="demo-route"
-          label={demoRouteLoading ? '⏳ Calculating…' : '🗺️ Demo route'}
-          color="#8B5CF6"
-          onClick={handleDemoRoute}
-        />
-        {activeRoute && (
-          <div
-            style={{
-              marginTop: 8,
-              padding: '8px 10px',
-              borderRadius: 8,
-              background: '#F5F3FF',
-              border: '1px solid #DDD6FE',
-              fontSize: 11,
-              color: '#6D28D9',
-              lineHeight: 1.4,
-            }}
-          >
-            Route to <b>{activeRoute.destination}</b> • {activeRoute.waitTime}m wait
-            <br />
-            <span style={{ color: '#059669' }}>{activeRoute.nashRerouteCount} fans rerouted</span>
-          </div>
-        )}
       </div>
 
       <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: 0 }} />

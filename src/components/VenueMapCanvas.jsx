@@ -19,6 +19,7 @@ export const VenueMapCanvas = ({
   customMeetupPoint = null,
   routeOverlay = null,
   hideRouteBadge = false,
+  wheelZoomRequiresModifier = false,
 }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
@@ -186,6 +187,8 @@ export const VenueMapCanvas = ({
 
     const onWheel = (e) => {
       if (disableInteraction) return;
+      const canZoomWithWheel = !wheelZoomRequiresModifier || e.ctrlKey || e.metaKey;
+      if (!canZoomWithWheel) return;
       e.preventDefault();
       e.stopPropagation();
       const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -211,7 +214,7 @@ export const VenueMapCanvas = ({
       canvas.removeEventListener('touchstart', onTouch);
       canvas.removeEventListener('touchmove', onTouch);
     };
-  }, [disableInteraction]);
+  }, [disableInteraction, wheelZoomRequiresModifier]);
 
   const handlePointerDown = (e) => {
     if (disableInteraction) return;
