@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { BottomNav } from '../components/Shared';
 import { Toast } from '../components/Toast';
 import { getEgressPlan, getGroupGateAssignments } from '../intelligence/egressChoreographer';
 import { GATE_BY_ID } from '../models/venueLayout';
-import { DoorOpen, Clock3, CarFront, Coffee, Check } from 'lucide-react';
+import { DoorOpen, Clock3, CarFront, Coffee, Check, Sparkles } from 'lucide-react';
 import { getSimStats } from '../simulation/crowdSimulator';
+import { generateEgressTip } from '../services/geminiService';
 
 const GROUP_MEMBERS = [
   { id: 'You', name: 'You', initials: 'You', color: 'bg-blue-100 text-blue-700' },
@@ -32,6 +33,8 @@ export function EgressPage() {
   const [claimed, setClaimed] = useState(false);
   const [toast, setToast] = useState(null);
   const [simStats, setSimStats] = useState(() => getSimStats());
+  const [aiTip, setAiTip] = useState('');
+  const requestedTipRef = useRef(false);
 
   const plan = useMemo(
     () => getEgressPlan(currentFan?.id || 'fan-1', { zoneId: currentFan?.location }),
@@ -56,6 +59,41 @@ export function EgressPage() {
   const groupGates = getGroupGateAssignments();
   const myGate = plan.gate;
   const departedPct = Math.round(((simStats?.exitedCount || 0) / Math.max(1, simStats?.total || 1)) * 100);
+  const fallbackTip = `Your exit route through ${myGate} is optimized for your group. Smart timing beats rushing.`;
+
+  useEffect(() => {
+    if (requestedTipRef.current) return;
+    requestedTipRef.current = true;
+
+    let isMounted = true;
+
+    const timeout = setTimeout(() => {
+      if (isMounted) setAiTip(fallbackTip);
+    }, 8000);
+
+    generateEgressTip({
+      fanZone: currentFan?.location || 'B4-B6',
+      assignedGate: myGate,
+      wave: `T+${Math.round(plan.departureTime || 0)}s`,
+      groupMembers: GROUP_MEMBERS.map((member) => member.name),
+      congestionSavings: 78,
+    })
+      .then((text) => {
+        if (!isMounted) return;
+        const trimmed = typeof text === 'string' ? text.trim() : '';
+        setAiTip(trimmed || fallbackTip);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setAiTip(fallbackTip);
+      })
+      .finally(() => clearTimeout(timeout));
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
+  }, [currentFan?.location, myGate, plan.departureTime, fallbackTip]);
 
   const handleClaim = () => {
     if (claimed) return;
@@ -148,6 +186,16 @@ export function EgressPage() {
               'Claim'
             )}
           </button>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-violet-200 bg-violet-50 p-4 mb-4">
+        <div className="flex items-start gap-2">
+          <Sparkles size={16} className="text-violet-700 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700">AI tip</p>
+            <p className="text-sm text-violet-900 mt-1 leading-relaxed">{aiTip || fallbackTip}</p>
+          </div>
         </div>
       </section>
 

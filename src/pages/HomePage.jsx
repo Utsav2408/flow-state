@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import {
@@ -8,13 +8,14 @@ import {
   COMFORT_THRESHOLDS,
 } from '../intelligence/comfortScoring';
 import { getNashStats } from '../intelligence/routingEngine';
+import { generateActionRecommendation } from '../services/geminiService';
 import {
   estimateWalkMetersFromPathCost,
   getZoneAliasesForGroup,
 } from '../models/venueLayout';
 import { BottomNav } from '../components/Shared';
 import { useAuth } from '../auth/useAuth';
-import { Map, UtensilsCrossed, Users, Star, ArrowUp } from 'lucide-react';
+import { Map, UtensilsCrossed, Users, Star, ArrowUp, Sparkles } from 'lucide-react';
 
 // ─── Comfort Gauge (Hero) ──────────────────────────────────────────────────
 const ComfortGaugeHero = ({ value }) => {
@@ -92,6 +93,8 @@ export const HomePage = () => {
 
   const [routing, setRouting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() => simState?.halftimeCountdownSeconds ?? 480);
+  const [aiRecommendation, setAiRecommendation] = useState(null);
+  const lastActionContextRef = useRef(null);
 
   useEffect(() => {
     const seed = simState?.halftimeCountdownSeconds;
@@ -175,8 +178,8 @@ export const HomePage = () => {
     return `Section ${section} — consider moving soon`;
   }, [comfortScore, zoneId]);
 
-  // ── AI Action Card logic ────────────────────────────────────────────
-  const aiAction = useMemo(() => {
+  // ── Action Card fallback logic ───────────────────────────────────────
+  const fallbackAction = useMemo(() => {
     if (nearestFood.waitTime != null && nearestFood.waitTime < 3) {
       return {
         type: 'food',
@@ -214,6 +217,53 @@ export const HomePage = () => {
       iconColor: 'text-blue-600',
     };
   }, [nearestFood, comfortScore, avgWait]);
+
+  const matchState = simState?.state || 'in_match';
+
+  useEffect(() => {
+    const previous = lastActionContextRef.current;
+    const changedMatchState = previous?.matchState !== matchState;
+    const changedComfortBand = previous == null || Math.abs(previous.comfortScore - comfortScore) >= 5;
+
+    if (!changedMatchState && !changedComfortBand) return;
+
+    const waitBeforeCall = previous == null ? 0 : 30000;
+
+    const timeout = setTimeout(() => {
+      let cancelled = false;
+
+      const fallbackTimeout = setTimeout(() => {
+        cancelled = true;
+      }, 8000);
+
+      generateActionRecommendation({
+        zoneName: zoneId,
+        comfortScore,
+        nearestStand: nearestFood.id,
+        nearestWait: nearestFood.waitTime ?? 'unknown',
+        crowdLevel,
+        matchState,
+      })
+        .then((text) => {
+          if (cancelled) return;
+          const trimmed = typeof text === 'string' ? text.trim() : '';
+          if (trimmed) setAiRecommendation(trimmed);
+        })
+        .catch(() => {
+          // Keep fallback recommendation visible; Gemini should never block UI.
+        })
+        .finally(() => {
+          clearTimeout(fallbackTimeout);
+        });
+
+      lastActionContextRef.current = {
+        comfortScore,
+        matchState,
+      };
+    }, waitBeforeCall);
+
+    return () => clearTimeout(timeout);
+  }, [comfortScore, matchState, zoneId, nearestFood.id, nearestFood.waitTime, crowdLevel]);
 
   // ── Route request handler ───────────────────────────────────────────
   const handleRouteRequest = async () => {
@@ -274,19 +324,25 @@ export const HomePage = () => {
       )}
 
       <section
-        className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${aiAction.bg} border ${aiAction.border} cursor-pointer active:scale-[0.98] transition-transform`}
-        onClick={aiAction.type === 'food' ? handleRouteRequest : undefined}
+        className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${fallbackAction.bg} border ${fallbackAction.border} cursor-pointer active:scale-[0.98] transition-transform`}
+        onClick={fallbackAction.type === 'food' ? handleRouteRequest : undefined}
       >
         <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-full ${aiAction.iconBg} mt-0.5`}>
-            <ArrowUp size={18} className={aiAction.iconColor} />
+          <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
+            <ArrowUp size={18} className={fallbackAction.iconColor} />
           </div>
           <div className="flex-1">
-            <h3 className={`font-bold text-base ${aiAction.titleColor}`}>
-              {aiAction.title}
-            </h3>
-            <p className={`text-sm ${aiAction.subtitleColor} mt-1 leading-relaxed`}>
-              {routing ? 'Calculating optimal route…' : aiAction.subtitle}
+            <div className="flex items-center gap-2">
+              <h3 className={`font-bold text-base ${fallbackAction.titleColor}`}>
+                {fallbackAction.title}
+              </h3>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
+                <Sparkles size={10} />
+                AI-powered
+              </span>
+            </div>
+            <p className={`text-sm ${fallbackAction.subtitleColor} mt-1 leading-relaxed`}>
+              {routing ? 'Calculating optimal route…' : aiRecommendation || fallbackAction.subtitle}
             </p>
           </div>
         </div>

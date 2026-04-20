@@ -80,8 +80,13 @@ npm run verify
 
 ## Environment
 
-The app expects Firebase client configuration via environment variables in `.env`.
-Use your own Firebase project values for local setup if needed.
+The app expects Firebase client configuration plus a Gemini API key via environment variables in `.env`.
+Use your own values for local setup:
+
+- `VITE_FIREBASE_*` for Firebase app config
+- `VITE_GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey)
+
+For deployed environments, add `VITE_GEMINI_API_KEY` in hosting environment configuration (for example Firebase Hosting runtime config or your deployment platform env settings).
 
 ## Challenge Value
 
