@@ -142,6 +142,9 @@ flow-state/
 │   ├── main.jsx                     # React root + providers
 │   └── firebase.js                  # Firebase bootstrap + optional seeding
 ├── .github/workflows/ci.yml         # Lint, test, build pipeline
+├── functions/                        # Firebase Cloud Functions (Gemini gateway)
+│   ├── index.js
+│   └── package.json
 ├── .env.example                     # Required env vars template
 ├── database.rules.json
 ├── package.json
@@ -185,6 +188,8 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 VITE_RECAPTCHA_V3_SITE_KEY=your_recaptcha_v3_site_key
+VITE_AI_GATEWAY_URL=/api/ai
+VITE_ENABLE_APPCHECK_IN_DEV=false
 VITE_SEED_DATABASE=false
 ```
 
@@ -194,7 +199,24 @@ VITE_SEED_DATABASE=false
 `VITE_RECAPTCHA_V3_SITE_KEY` is required in production for Firebase App Check hardening:
 - Measurement ID enables Firebase Analytics event logging.
 - reCAPTCHA v3 site key enables Firebase App Check for web abuse protection.
+- App Check is skipped during local development by default to avoid invalid localhost reCAPTCHA setup errors. Set `VITE_ENABLE_APPCHECK_IN_DEV=true` only when you intentionally want to test App Check locally.
 - Do not place Gemini (or any private API) keys in `VITE_*` variables because they are public in browser bundles.
+- `VITE_AI_GATEWAY_URL` is optional and defaults to `/api/ai` behind Firebase Hosting rewrite.
+
+### Gemini Backend Setup (Cloud Functions)
+
+Install function dependencies and set the Gemini secret:
+
+```bash
+cd functions
+npm install
+cd ..
+firebase functions:secrets:set GEMINI_API_KEY
+```
+
+Optional runtime settings:
+- `GEMINI_MODEL` (default `gemini-1.5-flash`)
+- `ALLOW_UNVERIFIED_AI_REQUESTS=true` only for controlled local debugging (not production)
 
 ### Run Locally
 
@@ -222,7 +244,7 @@ npm run verify    # lint + test:run + build
 
 ```bash
 npm run build
-firebase deploy --only hosting
+firebase deploy --only hosting,functions
 ```
 
 ---
@@ -267,7 +289,7 @@ Fans are divided into waves by zone proximity to gates. Departure times are stag
 | Comfort scoring | Fully functional | Add temperature, weather |
 | Group sync | Hardcoded demo group | Real user accounts + friends |
 | Egress choreography | Functional with sim data | Same logic, real gate sensors |
-| Gemini recommendations | Secure local fallback in client | Move LLM calls to Cloud Functions / backend |
+| Gemini recommendations | Cloud Function gateway with local fallback safety net | Gemini endpoint can evolve without exposing browser secrets |
 
 The architecture is designed so that swapping the simulation for real sensor data requires zero changes to the intelligence layer.
 
@@ -284,8 +306,9 @@ The architecture is designed so that swapping the simulation for real sensor dat
 
 ## Google Services Hardening (No Billing Required)
 
-- **Firebase App Check (Web)**: enforced in production via `VITE_RECAPTCHA_V3_SITE_KEY` in `src/firebase.js`.
+- **Firebase App Check (Web)**: enforced in production via `VITE_RECAPTCHA_V3_SITE_KEY` in `src/firebase.js`; optional local testing via `VITE_ENABLE_APPCHECK_IN_DEV=true`.
 - **Firebase Analytics**: optional integration via `VITE_FIREBASE_MEASUREMENT_ID` with app event tracking (`screen_view`, `login`, `route_requested`, `offer_claimed`, `ai_recommendation_shown`).
+- **Gemini backend gateway**: browser calls `/api/ai/*`; Firebase Functions reads `GEMINI_API_KEY` from managed secrets and verifies Firebase Auth + App Check tokens.
 - **Seed safety guardrails**: production builds fail when `VITE_SEED_DATABASE=true` and runtime seeding is blocked in production.
 - **Realtime Database Rules**: authenticated reads + admin-only writes + schema validation for `zones`, `stands`, `simulation`, and `alerts`.
 

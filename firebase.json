@@ -1,4 +1,16 @@
 {
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
   "hosting": {
     "site": "flow-state-demo-d66e0",
     "public": "dist",
@@ -8,6 +20,10 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/api/ai{,/**}",
+        "function": "aiGateway"
+      },
       {
         "source": "**",
         "destination": "/index.html"

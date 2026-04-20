@@ -1,16 +1,15 @@
-/**
- * Security hardening:
- * - Never call Gemini directly from browser code.
- * - API keys in VITE_* vars are always public and visible in bundled JS.
- * This local fallback keeps UX stable until a server-side function is wired.
- */
+import { getToken } from 'firebase/app-check';
+import { appCheck, auth } from '../firebase';
+
+const AI_GATEWAY_BASE_URL = (import.meta.env.VITE_AI_GATEWAY_URL ?? '/api/ai').replace(/\/+$/, '');
+
 function safeStandName(standId) {
   const text = String(standId ?? '').trim();
   if (!text) return 'nearby stand';
   return text.startsWith('S') ? `Stand ${text.slice(1)}` : `Stand ${text}`;
 }
 
-export async function generateActionRecommendation({
+function buildFallbackActionRecommendation({
   zoneName,
   comfortScore,
   nearestStand,
@@ -47,7 +46,7 @@ export async function generateActionRecommendation({
   return 'You are in a stable zone right now. Stay put, and watch for the next low-wait food window.';
 }
 
-export async function generateEgressTip({
+function buildFallbackEgressTip({
   assignedGate,
   wave,
   groupMembers,
@@ -60,4 +59,68 @@ export async function generateEgressTip({
     : 'major';
 
   return `Exit via ${assignedGate} at ${wave} ${groupLine}. Waiting briefly is the smart move and can avoid about ${savings} congestion.`;
+}
+
+async function getAuthBearerToken() {
+  if (!auth?.currentUser) return null;
+  try {
+    const idToken = await auth.currentUser.getIdToken();
+    return idToken ? `Bearer ${idToken}` : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getAppCheckToken() {
+  if (!appCheck) return null;
+  try {
+    const result = await getToken(appCheck);
+    return result?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function requestAiRecommendation(path, payload) {
+  const endpoint = path.startsWith('/') ? path : `/${path}`;
+  const url = `${AI_GATEWAY_BASE_URL}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  const [authHeader, appCheckToken] = await Promise.all([getAuthBearerToken(), getAppCheckToken()]);
+  if (authHeader) headers.Authorization = authHeader;
+  if (appCheckToken) headers['X-Firebase-AppCheck'] = appCheckToken;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(`AI gateway request failed (${response.status})`);
+  }
+
+  const data = await response.json();
+  const text = typeof data?.text === 'string' ? data.text.trim() : '';
+  if (!text) {
+    throw new Error('AI gateway returned an empty recommendation');
+  }
+  return text;
+}
+
+export async function generateActionRecommendation(payload) {
+  try {
+    return await requestAiRecommendation('/action-recommendation', payload);
+  } catch {
+    return buildFallbackActionRecommendation(payload);
+  }
+}
+
+export async function generateEgressTip(payload) {
+  try {
+    return await requestAiRecommendation('/egress-tip', payload);
+  } catch {
+    return buildFallbackEgressTip(payload);
+  }
 }

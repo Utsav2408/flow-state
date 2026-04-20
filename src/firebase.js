@@ -22,6 +22,7 @@ const canInit = Boolean(
     firebaseConfig.projectId
 );
 const isProductionBuild = import.meta.env.PROD;
+const appCheckEnabledInDev = import.meta.env.VITE_ENABLE_APPCHECK_IN_DEV === 'true';
 
 let app;
 let db;
@@ -36,11 +37,16 @@ if (canInit) {
 
     if (typeof window !== 'undefined') {
       const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
-      if (appCheckSiteKey) {
+      const shouldInitAppCheck = isProductionBuild || appCheckEnabledInDev;
+      if (appCheckSiteKey && shouldInitAppCheck) {
         appCheck = initializeAppCheck(app, {
           provider: new ReCaptchaV3Provider(appCheckSiteKey),
           isTokenAutoRefreshEnabled: true,
         });
+      } else if (appCheckSiteKey && !shouldInitAppCheck && import.meta.env.DEV) {
+        console.info(
+          'Firebase App Check skipped in development. Set VITE_ENABLE_APPCHECK_IN_DEV=true to test App Check locally.'
+        );
       } else if (isProductionBuild) {
         throw new Error(
           'Security check failed: VITE_RECAPTCHA_V3_SITE_KEY is required in production for Firebase App Check.'
