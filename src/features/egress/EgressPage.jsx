@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useStore } from '../store/useStore';
-import { BottomNav } from '../components/ui/BottomNav';
-import { Toast } from '../components/ui/Toast';
-import { getEgressPlan, getGroupGateAssignments } from '../intelligence/egressChoreographer';
-import { GATE_BY_ID } from '../models/venueLayout';
+import { useStore } from '../../store/useStore';
+import { BottomNav } from '../../components/ui/BottomNav';
+import { Toast } from '../../components/ui/Toast';
+import { getEgressPlan, getGroupGateAssignments } from '../../intelligence/egressChoreographer';
+import { GATE_BY_ID } from '../../models/venueLayout';
 import { DoorOpen, Clock3, CarFront, Coffee, Check, Sparkles } from 'lucide-react';
-import { getSimStats } from '../simulation/crowdSimulator';
-import { generateEgressTip } from '../services/geminiService';
+import { getSimStats } from '../../simulation/crowdSimulator';
+import { generateEgressTip } from '../../services/geminiService';
 
 const GROUP_MEMBERS = [
   { id: 'You', name: 'You', initials: 'You', color: 'bg-blue-100 text-blue-700' },

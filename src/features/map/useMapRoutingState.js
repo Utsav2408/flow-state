@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useStore } from '../store/useStore';
-import graph from '../models/venueGraph';
-import { requestRoute, getNashStats } from '../intelligence/routingEngine';
-import { getNodeCanvasPos } from '../models/venueLayout';
+import { useStore } from '../../store/useStore';
+import graph from '../../models/venueGraph';
+import { requestRoute, getNashStats } from '../../intelligence/routingEngine';
+import { getNodeCanvasPos } from '../../models/venueLayout';
 
 const resolveFanGraphNode = (location) => {
   if (!location) return 'B4';

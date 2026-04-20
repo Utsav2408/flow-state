@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../auth/useAuth';
+import { useAuth } from '../../auth/useAuth';
 import { VenueMapCanvas } from './VenueMapCanvas';
-import { BottomNav } from '../components/ui/BottomNav';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { ChevronLeft, Search } from 'lucide-react';
 import { useMapRoutingState, formatEta } from './useMapRoutingState';
 

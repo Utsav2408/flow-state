@@ -1,5 +1,5 @@
 import React from 'react';
-import { getComfortColor } from '../intelligence/comfortScoring';
+import { getComfortColor } from '../../intelligence/comfortScoring';
 import { formatTimeAgo } from './operatorMetrics';
 
 export const OperatorToast = ({ message, visible }) => (

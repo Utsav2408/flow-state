@@ -1,5 +1,5 @@
 import React from 'react';
-import { BottomNav } from '../components/ui/BottomNav';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { OperatorToast } from './OperatorDashboardWidgets';
 import {
   OperatorDashboardHeader,

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore';
 import {
   MAX_CANVAS_CSS_PX,
   OP_MAP_W,

@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore';
 import {
   getComfortScore,
   getComfortColor,
   normalizeDensityPercent,
   COMFORT_THRESHOLDS,
-} from '../intelligence/comfortScoring';
-import { getNashStats } from '../intelligence/routingEngine';
-import { generateActionRecommendation } from '../services/geminiService';
-import { estimateWalkMetersFromPathCost, getZoneAliasesForGroup } from '../models/venueLayout';
+} from '../../intelligence/comfortScoring';
+import { getNashStats } from '../../intelligence/routingEngine';
+import { generateActionRecommendation } from '../../services/geminiService';
+import { estimateWalkMetersFromPathCost, getZoneAliasesForGroup } from '../../models/venueLayout';
 
 /**
  * Encapsulates Home page simulation-aware recommendations and derived metrics.

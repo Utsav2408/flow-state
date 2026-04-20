@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BottomNav } from '../components/ui/BottomNav';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { ChevronLeft, Map, UtensilsCrossed } from 'lucide-react';
 
 export const RewardsPage = () => {

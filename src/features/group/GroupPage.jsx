@@ -1,10 +1,10 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BottomNav } from '../components/ui/BottomNav';
+import { BottomNav } from '../../components/ui/BottomNav';
 import { VenueMapCanvas } from '../map/VenueMapCanvas';
-import { Toast } from '../components/ui/Toast';
-import { useStore } from '../store/useStore';
-import { LOGICAL_MAP, getClosestStandToPoint, ZONE_GROUPS } from '../models/venueLayout';
+import { Toast } from '../../components/ui/Toast';
+import { useStore } from '../../store/useStore';
+import { LOGICAL_MAP, getClosestStandToPoint, ZONE_GROUPS } from '../../models/venueLayout';
 import { ChevronLeft, Check } from 'lucide-react';
 
 function pickStandForGroup(stands, members) {

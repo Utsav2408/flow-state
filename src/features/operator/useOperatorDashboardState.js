@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useStore } from '../store/useStore';
-import { db, ref, set } from '../firebase';
-import { startSimulation, triggerEvent, getSimStats } from '../simulation/crowdSimulator';
-import { getNashStats } from '../intelligence/routingEngine';
+import { useStore } from '../../store/useStore';
+import { db, ref, set } from '../../firebase';
+import { startSimulation, triggerEvent, getSimStats } from '../../simulation/crowdSimulator';
+import { getNashStats } from '../../intelligence/routingEngine';
 import {
   BASELINE_WAIT,
   BASELINE_COMFORT,

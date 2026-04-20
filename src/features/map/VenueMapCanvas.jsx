@@ -1,13 +1,13 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore';
 import {
   LOGICAL_MAP,
   ZONE_GROUPS,
   STAND_LAYOUT,
   projectOutsideInnerGroundCircle,
-} from '../models/venueLayout';
-import { computeZoneLabelOffsets, computeStandLabelSides } from '../utils/mapLabelLayout';
-import { paintDensityHeatmapOffscreen, paintVenueMainCanvas } from '../utils/venueMapCanvasPaint';
+} from '../../models/venueLayout';
+import { computeZoneLabelOffsets, computeStandLabelSides } from '../../utils/mapLabelLayout';
+import { paintDensityHeatmapOffscreen, paintVenueMainCanvas } from '../../utils/venueMapCanvasPaint';
 
 export const VenueMapCanvas = ({
   filters,

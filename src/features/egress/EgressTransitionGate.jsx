@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore';
 
 export function EgressTransitionGate() {
   const navigate = useNavigate();

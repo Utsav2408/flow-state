@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getComfortColor } from '../intelligence/comfortScoring';
-import { BottomNav } from '../components/ui/BottomNav';
-import { useAuth } from '../auth/useAuth';
+import { getComfortColor } from '../../intelligence/comfortScoring';
+import { BottomNav } from '../../components/ui/BottomNav';
+import { useAuth } from '../../auth/useAuth';
 import { Map, UtensilsCrossed, Users, Star, ArrowUp, Sparkles } from 'lucide-react';
 import { useHomePageState } from './useHomePageState';
 

@@ -1,15 +1,15 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { HomePage } from './home/HomePage';
-import { MapPage } from './map/MapPage';
-import { GroupPage } from './group/GroupPage';
-import { RewardsPage } from './rewards/RewardsPage';
-import { EgressPage } from './egress/EgressPage';
+import { HomePage } from './features/home/HomePage';
+import { MapPage } from './features/map/MapPage';
+import { GroupPage } from './features/group/GroupPage';
+import { RewardsPage } from './features/rewards/RewardsPage';
+import { EgressPage } from './features/egress/EgressPage';
 import { LoginPage } from './auth/LoginPage';
 import { ProtectedOperator } from './auth/ProtectedOperator';
 import { RequireAuth } from './auth/RequireAuth';
 import { FanAppBootstrap } from './app/FanAppBootstrap';
-import { EgressTransitionGate } from './egress/EgressTransitionGate';
+import { EgressTransitionGate } from './features/egress/EgressTransitionGate';
 
 function FanShell() {
   return (
