@@ -348,10 +348,18 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
     if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
   };
 
-  const zoomByStep = (delta) => {
+  const zoomByStep = useCallback((delta) => {
     zoomRef.current = clamp(zoomRef.current + delta, 0.5, 3);
     draw();
-  };
+  }, [draw]);
+
+  const handleZoomIn = useCallback(() => {
+    zoomByStep(0.2);
+  }, [zoomByStep]);
+
+  const handleZoomOut = useCallback(() => {
+    zoomByStep(-0.2);
+  }, [zoomByStep]);
 
   return (
     <div
@@ -393,37 +401,56 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
             zIndex: 2,
           }}
         >
-          {[
-            { label: '+', onClick: () => zoomByStep(0.2), ariaLabel: 'Zoom in' },
-            { label: '−', onClick: () => zoomByStep(-0.2), ariaLabel: 'Zoom out' },
-          ].map((btn) => (
-            <button
-              key={btn.ariaLabel}
-              type="button"
-              aria-label={btn.ariaLabel}
-              onClick={btn.onClick}
-              style={{
-                width: 32,
-                height: 32,
-                background: '#fff',
-                border: '0.5px solid #ddd',
-                borderRadius: 6,
-                fontSize: 18,
-                fontWeight: 500,
-                color: '#333',
-                cursor: 'pointer',
-                lineHeight: 1,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#f5f5f5';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#fff';
-              }}
-            >
-              {btn.label}
-            </button>
-          ))}
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={handleZoomIn}
+            style={{
+              width: 32,
+              height: 32,
+              background: '#fff',
+              border: '0.5px solid #ddd',
+              borderRadius: 6,
+              fontSize: 18,
+              fontWeight: 500,
+              color: '#333',
+              cursor: 'pointer',
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f5f5f5';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#fff';
+            }}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={handleZoomOut}
+            style={{
+              width: 32,
+              height: 32,
+              background: '#fff',
+              border: '0.5px solid #ddd',
+              borderRadius: 6,
+              fontSize: 18,
+              fontWeight: 500,
+              color: '#333',
+              cursor: 'pointer',
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f5f5f5';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#fff';
+            }}
+          >
+            -
+          </button>
         </div>
       </div>
 
