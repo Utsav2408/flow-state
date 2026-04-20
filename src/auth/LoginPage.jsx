@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../auth/useAuth';
+import { useAuth } from './useAuth';
 import { Activity, LogIn, Mail, KeyRound, AlertCircle } from 'lucide-react';
 
 /** Safe in-app path after login; non-admins cannot be sent to /operator. */

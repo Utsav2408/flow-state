@@ -7,10 +7,7 @@ import {
   projectOutsideInnerGroundCircle,
 } from '../models/venueLayout';
 import { computeZoneLabelOffsets, computeStandLabelSides } from '../utils/mapLabelLayout';
-import {
-  paintDensityHeatmapOffscreen,
-  paintVenueMainCanvas,
-} from '../utils/venueMapCanvasPaint';
+import { paintDensityHeatmapOffscreen, paintVenueMainCanvas } from '../utils/venueMapCanvasPaint';
 
 export const VenueMapCanvas = ({
   filters,

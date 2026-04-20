@@ -1,86 +1,54 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { getComfortColor } from '../intelligence/comfortScoring';
 import { formatTimeAgo } from './operatorMetrics';
 
 export const OperatorToast = ({ message, visible }) => (
   <div
+    className="pointer-events-none fixed bottom-[88px] left-1/2 z-[9999] whitespace-nowrap rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-semibold tracking-[0.01em] text-white shadow-[0_8px_32px_rgba(0,0,0,0.25)] transition-all duration-300"
     style={{
-      position: 'fixed',
-      bottom: 88,
-      left: '50%',
       transform: `translateX(-50%) translateY(${visible ? '0' : '30px'})`,
       opacity: visible ? 1 : 0,
-      background: '#0F172A',
-      color: '#fff',
-      padding: '10px 24px',
-      borderRadius: 12,
-      fontSize: 14,
-      fontWeight: 600,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-      transition: 'all 0.35s cubic-bezier(.4,0,.2,1)',
-      zIndex: 9999,
-      pointerEvents: 'none',
-      whiteSpace: 'nowrap',
-      letterSpacing: '0.01em',
     }}
   >
-    <span style={{ marginRight: 8 }}>⚡</span>
+    <span className="mr-2">⚡</span>
     {message}
   </div>
 );
 
 export const AlertFeed = ({ alerts }) => {
-  const dotColor = { red: '#EF4444', amber: '#F59E0B', green: '#22C55E', blue: '#3B82F6' };
+  const tones = {
+    red: { bg: 'rgba(239,68,68,0.07)', border: '#EF4444' },
+    amber: { bg: 'rgba(245,158,11,0.07)', border: '#F59E0B' },
+    green: { bg: 'rgba(34,197,94,0.07)', border: '#22C55E' },
+    blue: { bg: 'rgba(59,130,246,0.07)', border: '#3B82F6' },
+  };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-        width: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div className="box-border flex w-full flex-col gap-1.5">
       {alerts.length === 0 && (
-        <div style={{ color: '#94A3B8', fontSize: 13, padding: '8px 0' }}>No alerts yet.</div>
+        <div className="py-2 text-[13px] text-slate-400">No alerts yet.</div>
       )}
       {alerts.map((a, i) => (
         <div
           key={`${a.timestamp}-${i}`}
+          className="flex items-start gap-2.5 rounded-[10px] px-3 py-2"
           style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-            padding: '8px 12px',
-            borderRadius: 10,
-            background:
-              a.severity === 'red'
-                ? 'rgba(239,68,68,0.07)'
-                : a.severity === 'amber'
-                  ? 'rgba(245,158,11,0.07)'
-                  : a.severity === 'green'
-                    ? 'rgba(34,197,94,0.07)'
-                    : 'rgba(59,130,246,0.07)',
-            borderLeft: `3px solid ${dotColor[a.severity] || '#CBD5E1'}`,
+            background: tones[a.severity]?.bg || 'rgba(148,163,184,0.08)',
+            borderLeft: `3px solid ${tones[a.severity]?.border || '#CBD5E1'}`,
             animation: i === 0 ? 'alertSlideIn 0.3s ease-out' : 'none',
           }}
         >
           <span
+            className="mt-1 h-2 w-2 shrink-0 rounded-full"
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: dotColor[a.severity] || '#CBD5E1',
-              marginTop: 4,
-              flexShrink: 0,
+              background: tones[a.severity]?.border || '#CBD5E1',
             }}
           />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: '#1E293B', fontWeight: 500, lineHeight: 1.4 }}>
+          <div className="flex-1">
+            <div className="text-[13px] font-medium leading-snug text-slate-800">
               {a.message}
             </div>
-            <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+            <div className="mt-0.5 text-[11px] text-slate-400">
               {a.timeLabel || formatTimeAgo(a.timestamp)}
             </div>
           </div>
@@ -91,48 +59,14 @@ export const AlertFeed = ({ alerts }) => {
 };
 
 export const MetricCard = ({ label, value, sub, subColor = '#22C55E' }) => (
-  <div
-    style={{
-      background: '#fff',
-      borderRadius: 14,
-      padding: '16px 18px',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4,
-      minWidth: 0,
-    }}
-  >
-    <div
-      style={{
-        fontSize: 10,
-        fontWeight: 700,
-        color: '#94A3B8',
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
-      }}
-    >
+  <div className="flex min-w-0 flex-col gap-1 rounded-[14px] bg-white px-[18px] py-4 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+    <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
       {label}
     </div>
-    <div
-      style={{
-        fontSize: 28,
-        fontWeight: 800,
-        color: '#0F172A',
-        lineHeight: 1.15,
-        transition: 'all 0.6s cubic-bezier(.4,0,.2,1)',
-      }}
-    >
+    <div className="text-[28px] font-extrabold leading-[1.15] text-slate-900 transition-all duration-500">
       {value}
     </div>
-    <div
-      style={{
-        fontSize: 12,
-        fontWeight: 600,
-        color: subColor,
-        transition: 'color 0.4s ease',
-      }}
-    >
+    <div className="text-xs font-semibold transition-colors duration-300" style={{ color: subColor }}>
       {sub}
     </div>
   </div>
@@ -143,18 +77,13 @@ export const SpeedBtn = ({ label, active, onClick }) => (
     id={`speed-${label}`}
     type="button"
     onClick={onClick}
+    className={`flex-1 rounded-[10px] py-2.5 text-sm font-bold transition-all ${
+      active
+        ? 'bg-slate-900 text-white shadow-[0_2px_8px_rgba(15,23,42,0.18)]'
+        : 'bg-slate-100 text-slate-500'
+    }`}
     style={{
-      flex: 1,
-      padding: '10px 0',
-      borderRadius: 10,
       border: 'none',
-      cursor: 'pointer',
-      fontWeight: 700,
-      fontSize: 14,
-      background: active ? '#0F172A' : '#F1F5F9',
-      color: active ? '#fff' : '#64748B',
-      transition: 'all 0.18s',
-      boxShadow: active ? '0 2px 8px rgba(15,23,42,0.18)' : 'none',
     }}
   >
     {label}
@@ -162,8 +91,7 @@ export const SpeedBtn = ({ label, active, onClick }) => (
 );
 
 export const EventBtn = ({ id, label, color, onClick, selected, pulse }) => {
-  const [hover, setHover] = useState(false);
-  const bg = selected ? `${color}28` : pulse ? `${color}42` : hover ? `${color}20` : `${color}0d`;
+  const bg = selected ? `${color}28` : pulse ? `${color}42` : `${color}12`;
   const border = selected ? `2px solid ${color}` : `1.5px solid ${color}33`;
   const shadow = selected
     ? `0 0 0 3px ${color}28, 0 3px 10px ${color}22`
@@ -177,29 +105,13 @@ export const EventBtn = ({ id, label, color, onClick, selected, pulse }) => {
       type="button"
       aria-pressed={selected}
       onClick={onClick}
+      className="w-full rounded-xl py-[11px] text-sm font-bold tracking-[0.01em] transition-all active:scale-[0.97]"
       style={{
-        width: '100%',
-        padding: '11px 0',
-        borderRadius: 12,
         border,
         background: bg,
         color,
-        fontWeight: 700,
-        fontSize: 14,
-        cursor: 'pointer',
-        letterSpacing: '0.01em',
-        transition:
-          'background 0.2s, transform 0.1s, box-shadow 0.25s, border-color 0.2s',
         boxShadow: shadow,
         animation: pulse ? 'eventBtnPulse 1s ease-out' : 'none',
-      }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onMouseDown={(e) => {
-        e.currentTarget.style.transform = 'scale(0.97)';
-      }}
-      onMouseUp={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
       }}
     >
       {label}
@@ -225,58 +137,17 @@ export const FanAppPreview = ({
   const off = arc * (1 - comfortScore / 100);
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: 200,
-        border: '2.5px solid #1E293B',
-        borderRadius: 20,
-        background: '#FAFAF9',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(255,255,255,0.5)',
-      }}
-    >
-      <div
-        style={{
-          height: 16,
-          background: '#0F172A',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 3,
-        }}
-      >
-        <div style={{ width: 24, height: 3, borderRadius: 2, background: '#475569' }} />
+    <div className="relative flex h-[200px] w-full flex-col overflow-hidden rounded-[20px] border-[2.5px] border-slate-800 bg-stone-50 shadow-[0_4px_20px_rgba(0,0,0,0.12),inset_0_0_0_1px_rgba(255,255,255,0.5)]">
+      <div className="flex h-4 items-center justify-center gap-[3px] bg-slate-900">
+        <div className="h-[3px] w-6 rounded bg-slate-600" />
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          padding: '6px 8px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 4,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 7,
-            fontWeight: 800,
-            color: '#0F172A',
-            letterSpacing: '-0.02em',
-            width: '100%',
-            textAlign: 'left',
-          }}
-        >
+      <div className="flex flex-1 flex-col items-center gap-1 overflow-hidden px-2 py-1.5">
+        <div className="w-full text-left text-[7px] font-extrabold tracking-[-0.02em] text-slate-900">
           FlowState
         </div>
 
-        <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+        <div className="relative shrink-0" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             <circle
               cx={ctr}
@@ -304,96 +175,54 @@ export const FanAppPreview = ({
             />
           </svg>
           <div
+            className="absolute left-1/2 top-1/2 text-xs font-extrabold leading-none"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
               transform: 'translate(-50%, -50%)',
-              fontSize: 12,
-              fontWeight: 800,
               color: comfortColor,
-              lineHeight: 1,
             }}
           >
             {comfortScore}
           </div>
         </div>
-        <div style={{ fontSize: 6, color: '#64748B', fontWeight: 600, marginTop: -2 }}>
+        <div className="-mt-0.5 text-[6px] font-semibold text-slate-500">
           Comfort Score
         </div>
 
-        <div
-          style={{
-            width: '100%',
-            background: 'rgba(16,185,129,0.08)',
-            border: '1px solid rgba(16,185,129,0.2)',
-            borderRadius: 6,
-            padding: '4px 6px',
-          }}
-        >
-          <div style={{ fontSize: 6, fontWeight: 700, color: '#065F46', lineHeight: 1.3 }}>
+        <div className="w-full rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-1">
+          <div className="text-[6px] font-bold leading-tight text-emerald-900">
             {matchPhase === 'post_match'
               ? 'Match over! Exit plan ready'
               : aiActionTitle || "You're in a great spot"}
           </div>
-          <div style={{ fontSize: 5, color: '#059669', marginTop: 1 }}>
-            {matchPhase === 'post_match' ? 'Countdown + gate assignment' : 'Tap to navigate →'}
+          <div className="mt-px text-[5px] text-emerald-600">
+            {matchPhase === 'post_match' ? 'Countdown + gate assignment' : 'Tap to navigate ->'}
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 3,
-            width: '100%',
-          }}
-        >
+        <div className="grid w-full grid-cols-3 gap-[3px]">
           {[
             { val: `${nearestWait}m`, label: 'Food', color: '#22C55E' },
             { val: `${crowdLevel}%`, label: 'Crowd', color: '#3B82F6' },
             { val: activeRouteCount, label: 'Routes', color: '#F59E0B' },
           ].map((s) => (
-            <div
-              key={s.label}
-              style={{
-                background: '#fff',
-                borderRadius: 4,
-                padding: '3px 2px',
-                textAlign: 'center',
-                border: '0.5px solid #E2E8F0',
-              }}
-            >
+            <div key={s.label} className="rounded bg-white px-0.5 py-[3px] text-center ring-[0.5px] ring-slate-200">
               <div
+                className="text-[8px] font-extrabold leading-tight transition-all duration-500"
                 style={{
-                  fontSize: 8,
-                  fontWeight: 800,
                   color: s.color,
-                  lineHeight: 1.2,
-                  transition: 'all 0.5s ease',
                 }}
               >
                 {s.val}
               </div>
-              <div style={{ fontSize: 5, color: '#94A3B8', fontWeight: 600 }}>{s.label}</div>
+              <div className="text-[5px] font-semibold text-slate-400">{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div
-        style={{
-          height: 12,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 4,
-          background: '#fff',
-          borderTop: '0.5px solid #E2E8F0',
-        }}
-      >
+      <div className="flex h-3 items-center justify-center gap-1 bg-white ring-[0.5px] ring-inset ring-slate-200">
         {['○', '□', '△'].map((s, i) => (
-          <span key={i} style={{ fontSize: 5, color: '#94A3B8' }}>
+          <span key={i} className="text-[5px] text-slate-400">
             {s}
           </span>
         ))}
@@ -403,18 +232,8 @@ export const FanAppPreview = ({
 };
 
 export const FlowStateLogo = () => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-    <span
-      style={{
-        fontSize: 18,
-        fontWeight: 800,
-        letterSpacing: '-0.02em',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-      }}
-    >
+  <div className="flex items-center gap-2">
+    <span className="flex items-center gap-1.5 text-[18px] font-extrabold tracking-[-0.02em] text-white">
       <svg
         width="18"
         height="18"
@@ -429,6 +248,6 @@ export const FlowStateLogo = () => (
       </svg>
       FlowState
     </span>
-    <span style={{ fontSize: 13, color: '#94A3B8', fontWeight: 500 }}>operator dashboard</span>
+    <span className="text-[13px] font-medium text-slate-400">operator dashboard</span>
   </div>
 );

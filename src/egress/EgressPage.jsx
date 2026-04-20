@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { BottomNav } from '../components/Shared';
-import { Toast } from '../components/Toast';
+import { BottomNav } from '../components/ui/BottomNav';
+import { Toast } from '../components/ui/Toast';
 import { getEgressPlan, getGroupGateAssignments } from '../intelligence/egressChoreographer';
 import { GATE_BY_ID } from '../models/venueLayout';
 import { DoorOpen, Clock3, CarFront, Coffee, Check, Sparkles } from 'lucide-react';
@@ -130,11 +130,7 @@ export function EgressPage() {
             <p className="text-sm text-gray-500 font-medium mt-1">minutes</p>
           </div>
         </div>
-        <p
-          className={`mt-4 text-center font-semibold ${
-            isGoNow ? 'text-emerald-700 animate-pulse' : 'text-emerald-700'
-          }`}
-        >
+        <p className={`mt-4 text-center font-semibold ${isGoNow ? 'text-emerald-700 animate-pulse' : 'text-emerald-700'}`}>
           {isGoNow ? `Go now! Head to ${myGate}` : 'Your optimal exit window opens soon'}
         </p>
       </section>
@@ -241,14 +237,7 @@ export function EgressPage() {
 
       <BottomNav />
 
-      {toast && (
-        <Toast
-          key={toast.message}
-          message={toast.message}
-          type={toast.type}
-          onDismiss={() => setToast(null)}
-        />
-      )}
+      {toast && <Toast key={toast.message} message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
     </div>
   );
 }

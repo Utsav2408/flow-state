@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore';
 export function EgressTransitionGate() {
   const navigate = useNavigate();
   const location = useLocation();
-  const simState = useStore((s) => s.simState);
+  const simState = useStore((state) => state.simState);
 
   const isPostMatch = useMemo(() => {
     const state = String(simState?.state || '').toLowerCase();

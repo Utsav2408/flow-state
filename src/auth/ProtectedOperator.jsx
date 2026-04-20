@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../auth/useAuth';
-import { OperatorPage } from '../pages/OperatorPage';
+import { useAuth } from './useAuth';
+import { OperatorPage } from '../operator/OperatorPage';
 
 export const ProtectedOperator = () => {
   const { user, isAdmin, loading } = useAuth();

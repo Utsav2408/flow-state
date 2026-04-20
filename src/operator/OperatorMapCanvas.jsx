@@ -362,67 +362,19 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
   }, [zoomByStep]);
 
   return (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div
-        ref={containerRef}
-        style={{
-          flex: 1,
-          minHeight: 0,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+    <div className="flex h-full flex-col">
+      <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
         <canvas
           ref={canvasRef}
-          style={{
-            display: 'block',
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'auto',
-          }}
+          className="absolute left-0 top-0 block h-full w-full"
+          style={{ pointerEvents: 'auto' }}
         />
-        <div
-          style={{
-            position: 'absolute',
-            left: 8,
-            bottom: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            zIndex: 2,
-          }}
-        >
+        <div className="absolute bottom-2 left-2 z-[2] flex flex-col gap-1.5">
           <button
             type="button"
             aria-label="Zoom in"
             onClick={handleZoomIn}
-            style={{
-              width: 32,
-              height: 32,
-              background: '#fff',
-              border: '0.5px solid #ddd',
-              borderRadius: 6,
-              fontSize: 18,
-              fontWeight: 500,
-              color: '#333',
-              cursor: 'pointer',
-              lineHeight: 1,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f5f5f5';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#fff';
-            }}
+            className="h-8 w-8 rounded-md border border-slate-300 bg-white text-[18px] font-medium leading-none text-slate-700 transition-colors hover:bg-slate-100"
           >
             +
           </button>
@@ -430,50 +382,18 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
             type="button"
             aria-label="Zoom out"
             onClick={handleZoomOut}
-            style={{
-              width: 32,
-              height: 32,
-              background: '#fff',
-              border: '0.5px solid #ddd',
-              borderRadius: 6,
-              fontSize: 18,
-              fontWeight: 500,
-              color: '#333',
-              cursor: 'pointer',
-              lineHeight: 1,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f5f5f5';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#fff';
-            }}
+            className="h-8 w-8 rounded-md border border-slate-300 bg-white text-[18px] font-medium leading-none text-slate-700 transition-colors hover:bg-slate-100"
           >
             -
           </button>
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: 8,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
+      <div className="mt-2 flex justify-end">
         <button
           type="button"
           onClick={resetView}
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: '#475569',
-            background: '#F8FAFC',
-            border: '1px solid #CBD5E1',
-            borderRadius: 8,
-            padding: '6px 10px',
-            cursor: 'pointer',
-          }}
+          className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600"
         >
           Reset view
         </button>
