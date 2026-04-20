@@ -4,10 +4,9 @@ import {
   getComfortColor,
   getComfortLabel,
   getComfortScore,
-} from './comfortScoring';
-import { COMFORT_THRESHOLDS } from '../config/comfortConfig';
+} from '../../intelligence/comfortScoring';
+import { COMFORT_THRESHOLDS } from '../../config/comfortConfig';
 
-// ── Test fixtures ──────────────────────────────────────────────────────────
 const defaultZones = new Map([
   ['B4', { density: 40 }],
   ['B5', { density: 40 }],
@@ -26,6 +25,10 @@ describe('normalizeDensityPercent', () => {
 
   it('uses default guess for nullish', () => {
     expect(normalizeDensityPercent(null)).toBeTypeOf('number');
+  });
+
+  it('accepts numeric strings', () => {
+    expect(normalizeDensityPercent('45')).toBe(45);
   });
 });
 
@@ -60,7 +63,7 @@ describe('getComfortScore', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns score in 0–100 for a zone group', () => {
+  it('returns score in 0-100 for a zone group', () => {
     const s = getComfortScore('B4-B6', defaultZones, defaultStands);
     expect(s).toBeGreaterThanOrEqual(0);
     expect(s).toBeLessThanOrEqual(100);
@@ -70,6 +73,12 @@ describe('getComfortScore', () => {
     const zones = new Map([['C1', { density: 30 }]]);
     const stands = new Map();
     const s = getComfortScore('C1', zones, stands);
+    expect(s).toBeGreaterThanOrEqual(0);
+    expect(s).toBeLessThanOrEqual(100);
+  });
+
+  it('falls back gracefully when zone is unknown', () => {
+    const s = getComfortScore('UNKNOWN', new Map(), new Map());
     expect(s).toBeGreaterThanOrEqual(0);
     expect(s).toBeLessThanOrEqual(100);
   });

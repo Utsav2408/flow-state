@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useStore } from '../../store/useStore';
+import { COMFORT_STATUS_COLORS } from '../../config/comfortConfig';
 import {
   LOGICAL_MAP,
   ZONE_GROUPS,
@@ -296,6 +297,40 @@ export const VenueMapCanvas = ({
     }));
   };
 
+  const handleCanvasKeyDown = (e) => {
+    if (disableInteraction) return;
+
+    const keyboardPanStep = 30;
+    let hasChanged = false;
+
+    if (e.key === 'ArrowLeft') {
+      setTransform((prev) => ({ ...prev, x: prev.x - keyboardPanStep }));
+      hasChanged = true;
+    } else if (e.key === 'ArrowRight') {
+      setTransform((prev) => ({ ...prev, x: prev.x + keyboardPanStep }));
+      hasChanged = true;
+    } else if (e.key === 'ArrowUp') {
+      setTransform((prev) => ({ ...prev, y: prev.y - keyboardPanStep }));
+      hasChanged = true;
+    } else if (e.key === 'ArrowDown') {
+      setTransform((prev) => ({ ...prev, y: prev.y + keyboardPanStep }));
+      hasChanged = true;
+    } else if (e.key === '+' || e.key === '=') {
+      bumpZoom('in');
+      hasChanged = true;
+    } else if (e.key === '-' || e.key === '_') {
+      bumpZoom('out');
+      hasChanged = true;
+    } else if (e.key === '0') {
+      setTransform({ x: 0, y: 0, scale: 1 });
+      hasChanged = true;
+    }
+
+    if (hasChanged) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -305,14 +340,25 @@ export const VenueMapCanvas = ({
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 block w-full h-full touch-none select-none"
+        role="img"
+        aria-label="Fan venue map"
+        aria-describedby="fan-map-canvas-description"
+        tabIndex={disableInteraction ? -1 : 0}
+        className="absolute inset-0 block w-full h-full touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
         style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endPan}
         onPointerCancel={endPan}
         onLostPointerCapture={handleLostPointerCapture}
-      />
+        onKeyDown={handleCanvasKeyDown}
+      >
+        Fan venue map showing crowd density, stands, and optional route overlays.
+      </canvas>
+      <p id="fan-map-canvas-description" className="sr-only">
+        Interactive map. Use arrow keys to pan, plus or equals to zoom in, minus to zoom out, and
+        zero to reset.
+      </p>
       {!disableInteraction && (
         <div className="absolute top-3 right-3 z-10 flex flex-col rounded-xl bg-white/95 shadow-md border border-gray-200 overflow-hidden dark:bg-zinc-900/95 dark:border-zinc-700">
           <button
@@ -351,7 +397,7 @@ export const VenueMapCanvas = ({
             boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
           }}
         >
-          <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+          <span style={{ color: COMFORT_STATUS_COLORS.low, fontSize: 16 }}>✓</span>
           Smart route: {activeRoute.nashRerouteCount} others rerouted to keep your path clear
         </div>
       )}

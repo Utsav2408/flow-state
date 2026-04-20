@@ -28,3 +28,13 @@ export const DENSITY_UI = {
   midMax: 70,
   pulseAbove: 80,
 };
+
+/**
+ * WCAG-friendly comfort colors used by legends, badges, and UI bars.
+ * Chosen so small text can meet AA on white and indicator fills keep >= 3:1 contrast.
+ */
+export const COMFORT_STATUS_COLORS = {
+  low: '#15803D',
+  moderate: '#B45309',
+  high: '#B91C1C',
+};

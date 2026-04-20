@@ -141,25 +141,54 @@ export const HomePage = () => {
         )}
 
         <section
-          className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${fallbackAction.bg} border ${fallbackAction.border} cursor-pointer active:scale-[0.98] transition-transform`}
-          onClick={fallbackAction.type === 'food' ? handleRouteRequest : undefined}
+          className={`mb-6 rounded-2xl p-4 bg-gradient-to-br ${fallbackAction.bg} border ${fallbackAction.border}`}
         >
           <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
-              <ArrowUp size={18} className={fallbackAction.iconColor} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className={`font-bold text-base ${fallbackAction.titleColor}`}>{fallbackAction.title}</h3>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
-                  <Sparkles size={10} />
-                  AI-powered
-                </span>
-              </div>
-              <p className={`text-sm ${fallbackAction.subtitleColor} mt-1 leading-relaxed`}>
-                {routing ? 'Calculating optimal route…' : aiRecommendation || fallbackAction.subtitle}
-              </p>
-            </div>
+            {fallbackAction.type === 'food' ? (
+              <button
+                type="button"
+                onClick={handleRouteRequest}
+                className="w-full flex items-start gap-3 text-left cursor-pointer active:scale-[0.98] transition-transform rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
+              >
+                <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
+                  <ArrowUp size={18} className={fallbackAction.iconColor} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className={`font-bold text-base ${fallbackAction.titleColor}`}>
+                      {fallbackAction.title}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
+                      <Sparkles size={10} />
+                      AI-powered
+                    </span>
+                  </div>
+                  <p className={`text-sm ${fallbackAction.subtitleColor} mt-1 leading-relaxed`}>
+                    {routing ? 'Calculating optimal route…' : aiRecommendation || fallbackAction.subtitle}
+                  </p>
+                </div>
+              </button>
+            ) : (
+              <>
+                <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
+                  <ArrowUp size={18} className={fallbackAction.iconColor} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className={`font-bold text-base ${fallbackAction.titleColor}`}>
+                      {fallbackAction.title}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
+                      <Sparkles size={10} />
+                      AI-powered
+                    </span>
+                  </div>
+                  <p className={`text-sm ${fallbackAction.subtitleColor} mt-1 leading-relaxed`}>
+                    {routing ? 'Calculating optimal route…' : aiRecommendation || fallbackAction.subtitle}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </section>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { EventBtn, FanAppPreview, SpeedBtn } from './OperatorDashboardWidgets';
 import { TRIGGER_EVENT_LABELS, ZONE_GROUPS } from './operatorConstants';
 import { formatWallClock } from './operatorMetrics';
+import { COMFORT_STATUS_COLORS } from '../../config/comfortConfig';
 
 export function OperatorPanelDivider() {
   return <hr className="m-0 border-0 border-t border-slate-200" />;
@@ -122,9 +123,9 @@ function getZoneDensity(zones, aliases) {
 }
 
 function getDensityColor(density) {
-  if (density > 80) return '#EF4444';
-  if (density > 60) return '#F59E0B';
-  return '#22C55E';
+  if (density > 80) return COMFORT_STATUS_COLORS.high;
+  if (density > 60) return COMFORT_STATUS_COLORS.moderate;
+  return COMFORT_STATUS_COLORS.low;
 }
 
 export function ZoneStatusSection({ zones }) {

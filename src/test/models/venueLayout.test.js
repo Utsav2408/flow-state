@@ -5,7 +5,10 @@ import {
   getZoneAliasesForGroup,
   getClosestStandToPoint,
   LOGICAL_MAP,
-} from './venueLayout';
+  projectOutsideInnerGroundCircle,
+  FAN_MAP_INNER_GROUND_RADIUS,
+  FAN_GROUND_RING_MARGIN,
+} from '../../models/venueLayout';
 
 describe('getNodeCanvasPos', () => {
   it('maps zone node to group center', () => {
@@ -52,5 +55,21 @@ describe('getClosestStandToPoint', () => {
     const r = getClosestStandToPoint(empty, LOGICAL_MAP.cx, LOGICAL_MAP.cy);
     expect(r.id).toBeTruthy();
     expect(Number.isFinite(r.distance)).toBe(true);
+  });
+});
+
+describe('projectOutsideInnerGroundCircle', () => {
+  it('does not move points already outside the inner ground radius', () => {
+    const point = {
+      x: LOGICAL_MAP.cx + FAN_MAP_INNER_GROUND_RADIUS + FAN_GROUND_RING_MARGIN + 10,
+      y: LOGICAL_MAP.cy,
+    };
+    expect(projectOutsideInnerGroundCircle(point.x, point.y)).toEqual(point);
+  });
+
+  it('moves center point to the safe ring boundary', () => {
+    const point = projectOutsideInnerGroundCircle(LOGICAL_MAP.cx, LOGICAL_MAP.cy);
+    const distance = Math.hypot(point.x - LOGICAL_MAP.cx, point.y - LOGICAL_MAP.cy);
+    expect(distance).toBeCloseTo(FAN_MAP_INNER_GROUND_RADIUS + FAN_GROUND_RING_MARGIN, 5);
   });
 });

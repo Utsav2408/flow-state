@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../../store/useStore';
+import { COMFORT_STATUS_COLORS } from '../../config/comfortConfig';
 import {
   MAX_CANVAS_CSS_PX,
   OP_MAP_W,
@@ -28,6 +29,7 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
   const cx = OP_CX;
   const cy = OP_CY;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+  const keyboardPanStep = 30;
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -129,14 +131,14 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
       let cCenter;
       let cEdge;
       if (density < 40) {
-        cCenter = 'rgba(16,185,129,0.55)';
-        cEdge = 'rgba(16,185,129,0)';
+        cCenter = 'rgba(21,128,61,0.55)';
+        cEdge = 'rgba(21,128,61,0)';
       } else if (density <= 70) {
-        cCenter = 'rgba(245,158,11,0.6)';
-        cEdge = 'rgba(245,158,11,0)';
+        cCenter = 'rgba(180,83,9,0.6)';
+        cEdge = 'rgba(180,83,9,0)';
       } else {
-        cCenter = 'rgba(239,68,68,0.65)';
-        cEdge = 'rgba(239,68,68,0)';
+        cCenter = 'rgba(185,28,28,0.65)';
+        cEdge = 'rgba(185,28,28,0)';
       }
 
       const pulse = density > 80 ? 1 + Math.sin(t / 280) * 0.1 : 1;
@@ -155,7 +157,12 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
       ctx.textBaseline = 'middle';
       ctx.fillText(zp.id, zp.x, zp.y - 9);
       ctx.font = '12px Inter, sans-serif';
-      ctx.fillStyle = density > 80 ? '#DC2626' : density > 70 ? '#D97706' : '#374151';
+      ctx.fillStyle =
+        density > 80
+          ? COMFORT_STATUS_COLORS.high
+          : density > 70
+            ? COMFORT_STATUS_COLORS.moderate
+            : COMFORT_STATUS_COLORS.low;
       ctx.fillText(`${density}%`, zp.x, zp.y + 9);
     });
 
@@ -361,14 +368,61 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
     zoomByStep(-0.2);
   }, [zoomByStep]);
 
+  const handleCanvasKeyDown = useCallback(
+    (e) => {
+      let hasChanged = false;
+
+      if (e.key === 'ArrowLeft') {
+        panRef.current.x -= keyboardPanStep;
+        hasChanged = true;
+      } else if (e.key === 'ArrowRight') {
+        panRef.current.x += keyboardPanStep;
+        hasChanged = true;
+      } else if (e.key === 'ArrowUp') {
+        panRef.current.y -= keyboardPanStep;
+        hasChanged = true;
+      } else if (e.key === 'ArrowDown') {
+        panRef.current.y += keyboardPanStep;
+        hasChanged = true;
+      } else if (e.key === '+' || e.key === '=') {
+        zoomRef.current = clamp(zoomRef.current + 0.2, 0.5, 3);
+        hasChanged = true;
+      } else if (e.key === '-' || e.key === '_') {
+        zoomRef.current = clamp(zoomRef.current - 0.2, 0.5, 3);
+        hasChanged = true;
+      } else if (e.key === '0') {
+        zoomRef.current = 1;
+        panRef.current = { x: 0, y: 0 };
+        hasChanged = true;
+      }
+
+      if (hasChanged) {
+        e.preventDefault();
+        draw();
+      }
+    },
+    [draw],
+  );
+
   return (
     <div className="flex h-full flex-col">
       <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="absolute left-0 top-0 block h-full w-full"
+          role="img"
+          aria-label="Operator venue heatmap map"
+          aria-describedby="operator-map-canvas-description"
+          tabIndex={0}
+          onKeyDown={handleCanvasKeyDown}
+          className="absolute left-0 top-0 block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           style={{ pointerEvents: 'auto' }}
-        />
+        >
+          Operator map showing live crowd density zones, stand wait hotspots, and routing overlays.
+        </canvas>
+        <p id="operator-map-canvas-description" className="sr-only">
+          Interactive operator map. Use arrow keys to pan, plus or equals to zoom in, minus to
+          zoom out, and zero to reset the view.
+        </p>
         <div className="absolute bottom-2 left-2 z-[2] flex flex-col gap-1.5">
           <button
             type="button"

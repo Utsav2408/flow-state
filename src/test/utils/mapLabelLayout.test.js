@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeZoneLabelOffsets, computeStandLabelSides } from './mapLabelLayout';
+import { computeZoneLabelOffsets, computeStandLabelSides } from '../../utils/mapLabelLayout';
 
 describe('computeZoneLabelOffsets', () => {
   it('returns dx/dy entries bounded for each zone id', () => {
@@ -15,6 +15,12 @@ describe('computeZoneLabelOffsets', () => {
     expect(Math.abs(out.Z1.dx)).toBeLessThanOrEqual(88);
     expect(Math.abs(out.Z1.dy)).toBeLessThanOrEqual(88);
   });
+
+  it('returns deterministic keys for empty stand input', () => {
+    const zones = [{ id: 'Z1', x: 300, y: 220 }];
+    const out = computeZoneLabelOffsets(zones, [], { cx: 400, cy: 400 });
+    expect(Object.keys(out)).toEqual(['Z1']);
+  });
 });
 
 describe('computeStandLabelSides', () => {
@@ -25,5 +31,15 @@ describe('computeStandLabelSides', () => {
     const sides = computeStandLabelSides(stands, zones, offsets);
 
     expect(sides.S7 === 'left' || sides.S7 === 'right').toBe(true);
+  });
+
+  it('returns one side entry per stand', () => {
+    const zones = [{ id: 'Z1', x: 180, y: 200 }];
+    const stands = [
+      { id: 'S1', x: 280, y: 300 },
+      { id: 'S2', x: 100, y: 100 },
+    ];
+    const sides = computeStandLabelSides(stands, zones, { Z1: { dx: 10, dy: -10 } });
+    expect(Object.keys(sides)).toEqual(['S1', 'S2']);
   });
 });

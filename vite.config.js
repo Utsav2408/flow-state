@@ -10,5 +10,24 @@ export default defineConfig({
     setupFiles: './src/test/setup.js',
     include: ['src/**/*.{test,spec}.{js,jsx}'],
     css: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+      all: true,
+      include: ['src/**/*.{js,jsx}'],
+      exclude: [
+        'src/**/*.test.{js,jsx}',
+        'src/**/*.spec.{js,jsx}',
+        'src/test/**',
+        'src/main.jsx',
+      ],
+      thresholds: {
+        statements: 30,
+        branches: 70,
+        functions: 60,
+        lines: 30,
+      },
+    },
   },
 })

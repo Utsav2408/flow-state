@@ -10,6 +10,7 @@ import {
   TriggerEventsSection,
   ZoneStatusSection,
 } from './OperatorRightRailSections';
+import { COMFORT_STATUS_COLORS } from '../../config/comfortConfig';
 
 export function OperatorDashboardHeader({ simTimeSecs, matchLabel, matchColor }) {
   return (
@@ -95,9 +96,9 @@ export function OperatorDashboardLeftColumn({
             <span className="text-xs font-bold uppercase tracking-[0.07em] text-slate-500">Venue Heatmap</span>
             <div className="flex gap-3">
               {[
-                { color: '#10B981', label: '<40%' },
-                { color: '#F59E0B', label: '40-70%' },
-                { color: '#EF4444', label: '>70%' },
+                { color: COMFORT_STATUS_COLORS.low, label: '<40%' },
+                { color: COMFORT_STATUS_COLORS.moderate, label: '40-70%' },
+                { color: COMFORT_STATUS_COLORS.high, label: '>70%' },
               ].map((l) => (
                 <div key={l.label} className="flex items-center gap-1">
                   <span
@@ -106,7 +107,7 @@ export function OperatorDashboardLeftColumn({
                       background: l.color,
                     }}
                   />
-                  <span className="text-[11px] text-slate-400">{l.label}</span>
+                  <span className="text-[11px] text-slate-700">{l.label}</span>
                 </div>
               ))}
             </div>
