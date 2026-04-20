@@ -18,12 +18,16 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
   const canvasRef = useRef(null);
   const animRef = useRef();
   const timeRef = useRef(0);
+  const zoomRef = useRef(1);
+  const panRef = useRef({ x: 0, y: 0 });
+  const dragRef = useRef({ isDragging: false, lastX: 0, lastY: 0 });
   const activeRoute = useStore((state) => state.activeRoute);
 
   const logicalW = OP_MAP_W;
   const logicalH = OP_MAP_H;
   const cx = OP_CX;
   const cy = OP_CY;
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -40,6 +44,11 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
     canvas.height = Math.floor(cssH * dpr);
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, cssW, cssH);
+
+    const { x: panX, y: panY } = panRef.current;
+    const zoomLevel = zoomRef.current;
+    ctx.translate(panX, panY);
+    ctx.scale(zoomLevel, zoomLevel);
 
     const scale = Math.min(cssW / logicalW, cssH / logicalH) * 0.95;
     const ox = (cssW - logicalW * scale) / 2;
@@ -270,46 +279,197 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
     return () => obs.disconnect();
   }, [draw]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const oldScale = zoomRef.current;
+      const nextScale = clamp(oldScale + e.deltaY * -0.001, 0.5, 3);
+      if (nextScale === oldScale) return;
+
+      const { x: panX, y: panY } = panRef.current;
+      const scaleRatio = nextScale / oldScale;
+      panRef.current = {
+        x: mouseX - (mouseX - panX) * scaleRatio,
+        y: mouseY - (mouseY - panY) * scaleRatio,
+      };
+      zoomRef.current = nextScale;
+    };
+
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      dragRef.current = { isDragging: true, lastX: e.clientX, lastY: e.clientY };
+      canvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    };
+
+    const onMouseMove = (e) => {
+      if (!dragRef.current.isDragging) return;
+      const dx = e.clientX - dragRef.current.lastX;
+      const dy = e.clientY - dragRef.current.lastY;
+      panRef.current = {
+        x: panRef.current.x + dx,
+        y: panRef.current.y + dy,
+      };
+      dragRef.current.lastX = e.clientX;
+      dragRef.current.lastY = e.clientY;
+    };
+
+    const endDrag = () => {
+      if (!dragRef.current.isDragging) return;
+      dragRef.current.isDragging = false;
+      if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
+    };
+
+    canvas.style.cursor = 'grab';
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', endDrag);
+
+    return () => {
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', endDrag);
+    };
+  }, []);
+
+  const resetView = () => {
+    zoomRef.current = 1;
+    panRef.current = { x: 0, y: 0 };
+    dragRef.current = { isDragging: false, lastX: 0, lastY: 0 };
+    if (canvasRef.current) canvasRef.current.style.cursor = 'grab';
+  };
+
+  const zoomByStep = (delta) => {
+    zoomRef.current = clamp(zoomRef.current + delta, 0.5, 3);
+    draw();
+  };
+
   return (
     <div
-      ref={containerRef}
       style={{
-        position: 'absolute',
-        inset: 0,
-        overflow: 'hidden',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <canvas
-        ref={canvasRef}
+      <div
+        ref={containerRef}
         style={{
-          display: 'block',
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
+          flex: 1,
+          minHeight: 0,
+          position: 'relative',
+          overflow: 'hidden',
         }}
-      />
-      {activeRoute && (
+      >
+        <canvas
+          ref={canvasRef}
+          style={{
+            display: 'block',
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'auto',
+          }}
+        />
         <div
           style={{
             position: 'absolute',
-            bottom: 10,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            left: 8,
+            bottom: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+            zIndex: 2,
+          }}
+        >
+          {[
+            { label: '+', onClick: () => zoomByStep(0.2), ariaLabel: 'Zoom in' },
+            { label: '−', onClick: () => zoomByStep(-0.2), ariaLabel: 'Zoom out' },
+          ].map((btn) => (
+            <button
+              key={btn.ariaLabel}
+              type="button"
+              aria-label={btn.ariaLabel}
+              onClick={btn.onClick}
+              style={{
+                width: 32,
+                height: 32,
+                background: '#fff',
+                border: '0.5px solid #ddd',
+                borderRadius: 6,
+                fontSize: 18,
+                fontWeight: 500,
+                color: '#333',
+                cursor: 'pointer',
+                lineHeight: 1,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#f5f5f5';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#fff';
+              }}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 8,
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <button
+          type="button"
+          onClick={resetView}
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#475569',
+            background: '#F8FAFC',
+            border: '1px solid #CBD5E1',
+            borderRadius: 8,
+            padding: '6px 10px',
+            cursor: 'pointer',
+          }}
+        >
+          Reset view
+        </button>
+      </div>
+
+      {activeRoute && (
+        <div
+          style={{
+            marginTop: 8,
+            width: '100%',
             background: '#ECFDF5',
             border: '1px solid #A7F3D0',
             borderRadius: 12,
             padding: '8px 16px',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 8,
             fontSize: 12,
             fontWeight: 600,
             color: '#065F46',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            textAlign: 'center',
+            boxSizing: 'border-box',
           }}
         >
           <span style={{ color: '#10B981', fontSize: 15 }}>✓</span>

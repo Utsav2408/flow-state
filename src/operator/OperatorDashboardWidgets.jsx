@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { getComfortColor } from '../intelligence/comfortScoring';
 import { formatTimeAgo } from './operatorMetrics';
 
@@ -30,26 +30,16 @@ export const OperatorToast = ({ message, visible }) => (
 );
 
 export const AlertFeed = ({ alerts }) => {
-  const scrollRef = useRef(null);
-  const topKey =
-    alerts.length > 0 ? `${alerts[0].timestamp ?? ''}\0${alerts[0].message ?? ''}` : '';
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [topKey, alerts.length]);
-
   const dotColor = { red: '#EF4444', amber: '#F59E0B', green: '#22C55E', blue: '#3B82F6' };
 
   return (
     <div
-      ref={scrollRef}
       style={{
-        flex: 1,
-        overflowY: 'auto',
-        maxHeight: 200,
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
-        scrollBehavior: 'smooth',
+        width: '100%',
+        boxSizing: 'border-box',
       }}
     >
       {alerts.length === 0 && (

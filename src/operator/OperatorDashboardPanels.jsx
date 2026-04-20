@@ -140,98 +140,133 @@ export function OperatorDashboardLeftColumn({
 
       <div
         style={{
+          display: 'grid',
+          gridTemplateColumns: '3fr 2fr',
+          gap: 16,
+          marginTop: 12,
+          minHeight: 500,
           flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#fff',
-          borderRadius: 16,
-          boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-          overflow: 'hidden',
+          minWidth: 0,
         }}
       >
         <div
           style={{
+            background: '#fff',
+            borderRadius: 16,
+            boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
             padding: '12px 16px 8px',
-            flexShrink: 0,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
+            minHeight: 500,
+            minWidth: 0,
+            overflow: 'hidden',
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#64748B',
-              textTransform: 'uppercase',
-              letterSpacing: '0.07em',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              marginBottom: 8,
             }}
           >
-            Venue Heatmap
-          </span>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {[
-              { color: '#10B981', label: '<40%' },
-              { color: '#F59E0B', label: '40-70%' },
-              { color: '#EF4444', label: '>70%' },
-            ].map((l) => (
-              <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: l.color,
-                    display: 'inline-block',
-                  }}
-                />
-                <span style={{ fontSize: 11, color: '#94A3B8' }}>{l.label}</span>
-              </div>
-            ))}
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+              }}
+            >
+              Venue Heatmap
+            </span>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {[
+                { color: '#10B981', label: '<40%' },
+                { color: '#F59E0B', label: '40-70%' },
+                { color: '#EF4444', label: '>70%' },
+              ].map((l) => (
+                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: l.color,
+                      display: 'inline-block',
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: '#94A3B8' }}>{l.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+            <OperatorMapCanvas zones={zones} stands={stands} matchPhase={matchPhase} />
           </div>
         </div>
-        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-          <OperatorMapCanvas zones={zones} stands={stands} matchPhase={matchPhase} />
-        </div>
-      </div>
 
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 16,
-          boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-          padding: '14px 16px',
-        }}
-      >
         <div
           style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: '#64748B',
-            textTransform: 'uppercase',
-            letterSpacing: '0.07em',
-            marginBottom: 10,
+            background: '#fff',
+            borderRadius: 16,
+            boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
+            padding: '14px 16px',
+            minHeight: 500,
+            maxHeight: 500,
+            height: '100%',
+            minWidth: 0,
+            overflow: 'hidden',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
           }}
         >
-          <span>Live Alerts</span>
-          <span
+          <div
             style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: '#94A3B8',
-              background: '#F1F5F9',
-              padding: '2px 8px',
-              borderRadius: 8,
+              flex: 1,
+              minHeight: 0,
+              height: '100%',
+              overflowY: 'auto',
             }}
           >
-            {allAlerts.length} / {MAX_ALERTS}
-          </span>
+            <div
+              style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 1,
+                background: '#fff',
+                paddingBottom: 10,
+                marginBottom: 10,
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>Live Alerts</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: '#94A3B8',
+                  background: '#F1F5F9',
+                  padding: '2px 8px',
+                  borderRadius: 8,
+                }}
+              >
+                {allAlerts.length} / {MAX_ALERTS}
+              </span>
+            </div>
+            <AlertFeed alerts={allAlerts} />
+          </div>
         </div>
-        <AlertFeed alerts={allAlerts} />
       </div>
     </div>
   );

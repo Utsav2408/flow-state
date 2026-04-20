@@ -132,7 +132,18 @@ export function paintVenueMainCanvas(
   ctx.fillText('Pitch', cx, cy);
 
   ctx.globalCompositeOperation = 'screen';
-  ctx.drawImage(offscreenCanvas, 0, 0);
+  // Offscreen heatmap backing store is DPR-scaled; draw it back into logical map bounds once.
+  ctx.drawImage(
+    offscreenCanvas,
+    0,
+    0,
+    offscreenCanvas.width,
+    offscreenCanvas.height,
+    0,
+    0,
+    LOGICAL_MAP.width,
+    LOGICAL_MAP.height,
+  );
   ctx.globalCompositeOperation = 'source-over';
 
   const showDensity = filters.density !== false;

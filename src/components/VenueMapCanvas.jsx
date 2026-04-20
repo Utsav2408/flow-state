@@ -95,9 +95,13 @@ export const VenueMapCanvas = ({
 
   useEffect(() => {
     const osCanvas = offscreenCanvasRef.current;
-    osCanvas.width = logicalWidth;
-    osCanvas.height = logicalHeight;
+    const dpr = window.devicePixelRatio || 1;
+    osCanvas.width = logicalWidth * dpr;
+    osCanvas.height = logicalHeight * dpr;
+    osCanvas.style.width = `${logicalWidth}px`;
+    osCanvas.style.height = `${logicalHeight}px`;
     const ctx = osCanvas.getContext('2d', { alpha: true });
+    ctx.scale(dpr, dpr);
     if (filters.density !== false) {
       paintDensityHeatmapOffscreen(ctx, {
         logicalWidth,
@@ -113,14 +117,18 @@ export const VenueMapCanvas = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !containerRef.current) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    const rect = containerRef.current.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
 
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
@@ -297,7 +305,7 @@ export const VenueMapCanvas = ({
     >
       <canvas
         ref={canvasRef}
-        className="block touch-none select-none"
+        className="absolute inset-0 block w-full h-full touch-none select-none"
         style={{ touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
