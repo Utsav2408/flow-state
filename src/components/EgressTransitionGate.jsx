@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 
@@ -6,29 +6,25 @@ export function EgressTransitionGate() {
   const navigate = useNavigate();
   const location = useLocation();
   const simState = useStore((s) => s.simState);
-  const [visible, setVisible] = useState(false);
 
   const isPostMatch = useMemo(() => {
     const state = String(simState?.state || '').toLowerCase();
     return state === 'post_match' || state === 'post-match';
   }, [simState?.state]);
+  const shouldShowOverlay =
+    isPostMatch && location.pathname !== '/egress' && location.pathname !== '/operator';
 
   useEffect(() => {
-    if (!isPostMatch) {
-      setVisible(false);
-      return undefined;
-    }
-    if (location.pathname === '/egress' || location.pathname === '/operator') return undefined;
-    setVisible(true);
+    if (!shouldShowOverlay) return undefined;
 
     const timer = setTimeout(() => {
       navigate('/egress', { replace: true });
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [isPostMatch, location.pathname, navigate]);
+  }, [navigate, shouldShowOverlay]);
 
-  if (!visible || location.pathname === '/egress' || !isPostMatch) return null;
+  if (!shouldShowOverlay) return null;
 
   return (
     <div className="absolute inset-0 z-[60] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center px-6">
