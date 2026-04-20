@@ -9,6 +9,9 @@ export const OperatorToast = ({ message, visible }) => (
       transform: `translateX(-50%) translateY(${visible ? '0' : '30px'})`,
       opacity: visible ? 1 : 0,
     }}
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
   >
     <span className="mr-2">⚡</span>
     {message}
@@ -45,6 +48,9 @@ export const AlertFeed = ({ alerts }) => {
             }}
           />
           <div className="flex-1">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+              Severity: {a.severity || 'info'}
+            </div>
             <div className="text-[13px] font-medium leading-snug text-slate-800">
               {a.message}
             </div>
@@ -77,7 +83,7 @@ export const SpeedBtn = ({ label, active, onClick }) => (
     id={`speed-${label}`}
     type="button"
     onClick={onClick}
-    className={`flex-1 rounded-[10px] py-2.5 text-sm font-bold transition-all ${
+    className={`flex-1 min-h-11 rounded-[10px] py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 ${
       active
         ? 'bg-slate-900 text-white shadow-[0_2px_8px_rgba(15,23,42,0.18)]'
         : 'bg-slate-100 text-slate-500'
@@ -105,7 +111,7 @@ export const EventBtn = ({ id, label, color, onClick, selected, pulse }) => {
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className="w-full rounded-xl py-[11px] text-sm font-bold tracking-[0.01em] transition-all active:scale-[0.97]"
+      className="w-full min-h-11 rounded-xl py-[11px] text-sm font-bold tracking-[0.01em] transition-all active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
       style={{
         border,
         background: bg,

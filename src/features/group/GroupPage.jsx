@@ -75,15 +75,21 @@ export const GroupPage = () => {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform"
+          className="w-11 h-11 p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+          aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={20} aria-hidden />
         </button>
-        <h1 className="text-xl font-extrabold text-gray-900 absolute left-1/2 -translate-x-1/2">My group</h1>
+        <h1
+          data-page-heading
+          className="text-xl font-extrabold text-gray-900 absolute left-1/2 -translate-x-1/2"
+        >
+          My group
+        </h1>
         <span className="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Match crew</span>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-4">
+      <main id="main-content" className="flex-1 min-h-0 overflow-y-auto px-5 pt-4" aria-label="Group content">
         <div className="h-100 w-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative">
           <VenueMapCanvas
             filters={{ density: true, food: false, exits: false, group: true, route: false }}
@@ -91,6 +97,13 @@ export const GroupPage = () => {
             customMeetupPoint={meetupSuggestion.point}
           />
         </div>
+        <section className="sr-only" aria-labelledby="group-map-summary-heading">
+          <h2 id="group-map-summary-heading">Meetup map summary</h2>
+          <p>
+            Suggested meetup is {meetupSuggestion.title}. Map displays your group members and the
+            suggested meetup point.
+          </p>
+        </section>
 
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">4 MEMBERS</h3>
 
@@ -138,7 +151,7 @@ export const GroupPage = () => {
           <button
             type="button"
             onClick={handlePing}
-            className="w-full mt-4 bg-white border border-gray-200 text-gray-900 font-bold py-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform inline-flex items-center justify-center gap-2"
+            className="w-full min-h-11 mt-4 bg-white border border-gray-200 text-gray-900 font-bold py-3 rounded-xl shadow-sm active:scale-[0.98] transition-transform inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             {pingSent ? (
               <>
@@ -155,20 +168,27 @@ export const GroupPage = () => {
           <button
             type="button"
             onClick={handleSyncFood}
-            className="flex-1 bg-orange-50 text-orange-900 text-sm font-bold py-4 rounded-2xl border border-orange-100 flex flex-col items-center gap-2 active:scale-95 transition-transform"
+            className="flex-1 min-h-11 bg-orange-50 text-orange-900 text-sm font-bold py-4 rounded-2xl border border-orange-100 flex flex-col items-center gap-2 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           >
-            <span className="text-xl">🍔</span>
+            <span className="text-xl" aria-hidden>
+              🍔
+            </span>
             <span>Sync food run</span>
           </button>
           <button
             type="button"
-            className="flex-1 bg-purple-50 text-purple-900 text-sm font-bold py-4 rounded-2xl border border-purple-100 flex flex-col items-center gap-2 active:scale-95 transition-transform"
+            className="flex-1 min-h-11 bg-purple-50 text-purple-900 text-sm font-bold py-4 rounded-2xl border border-purple-100 flex flex-col items-center gap-2 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
           >
-            <span className="text-xl">💬</span>
+            <span className="text-xl" aria-hidden>
+              💬
+            </span>
             <span>Quick message</span>
           </button>
         </div>
-      </div>
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {toast?.message ? `Status update. ${toast.message}` : ''}
+        </p>
+      </main>
       <BottomNav />
       {toast && (
         <Toast

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { OperatorToast } from './OperatorDashboardWidgets';
 import {
@@ -7,6 +7,7 @@ import {
   OperatorDashboardRightColumn,
 } from './OperatorDashboardPanels';
 import { useOperatorDashboardState } from './useOperatorDashboardState';
+import { usePrefersReducedMotion } from '../../utils/usePrefersReducedMotion';
 
 export const OperatorPage = () => {
   const {
@@ -40,6 +41,29 @@ export const OperatorPage = () => {
     handleTriggerEvent,
     toast,
   } = useOperatorDashboardState();
+  const prevComfortRef = useRef(comfortScore);
+  const prevAlertCountRef = useRef(allAlerts.length);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const liveRegionRef = useRef(null);
+
+  useEffect(() => {
+    if (allAlerts.length > prevAlertCountRef.current) {
+      const newestAlert = allAlerts[0];
+      if (newestAlert?.message && liveRegionRef.current) {
+        liveRegionRef.current.textContent = `New alert: ${newestAlert.message}`;
+      }
+      prevAlertCountRef.current = allAlerts.length;
+    }
+  }, [allAlerts]);
+
+  useEffect(() => {
+    if (Math.abs(comfortScore - prevComfortRef.current) >= 5) {
+      if (liveRegionRef.current) {
+        liveRegionRef.current.textContent = `Venue comfort average updated to ${comfortScore}.`;
+      }
+      prevComfortRef.current = comfortScore;
+    }
+  }, [comfortScore]);
 
   return (
     <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-slate-100 font-sans">
@@ -49,7 +73,10 @@ export const OperatorPage = () => {
         matchColor={matchColor}
       />
 
-      <div className="grid min-h-0 flex-1 grid-cols-[1fr_240px]">
+      <main id="main-content" className="grid min-h-0 flex-1 grid-cols-[1fr_240px]" aria-label="Operator dashboard content">
+        <h1 data-page-heading className="sr-only">
+          Operator Dashboard
+        </h1>
         <OperatorDashboardLeftColumn
           fanCount={fanCount}
           capPct={capPct}
@@ -86,7 +113,8 @@ export const OperatorPage = () => {
           zones={zones}
           matchPhase={matchPhase}
         />
-      </div>
+        <p ref={liveRegionRef} className="sr-only" role="status" aria-live="polite" aria-atomic="true" />
+      </main>
 
       <BottomNav />
 
@@ -108,6 +136,16 @@ export const OperatorPage = () => {
           100% { filter: brightness(1); }
         }
       `}</style>
+      {prefersReducedMotion ? (
+        <style>{`
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        `}</style>
+      ) : null}
     </div>
   );
 };

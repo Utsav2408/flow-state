@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
 import { VenueMapCanvas } from './VenueMapCanvas';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { ChevronLeft, Search } from 'lucide-react';
 import { useMapRoutingState, formatEta } from './useMapRoutingState';
+import { COMFORT_STATUS_COLORS } from '../../config/comfortConfig';
 
 export const MapPage = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ export const MapPage = () => {
     cancelNavigation,
     handleFastestFoodRoute,
   } = useMapRoutingState({ navigate, searchParams });
+  const liveRegionRef = useRef(null);
+  const headingRef = useRef(null);
 
   const handleBack = () => {
     if (isRouteSectionOpen) {
@@ -34,6 +37,19 @@ export const MapPage = () => {
     navigate(-1);
   };
 
+  useEffect(() => {
+    if (!isRouteSectionOpen || !selectedRoute || !navigationState) return;
+    if (!liveRegionRef.current) return;
+    liveRegionRef.current.textContent =
+      `Route ${selectedRoute.id} selected to ${navigationState.destinationLabel}. ` +
+      `Estimated time ${formatEta(selectedRoute.etaSeconds)}.`;
+  }, [isRouteSectionOpen, selectedRoute, navigationState]);
+
+  useEffect(() => {
+    if (!headingRef.current) return;
+    headingRef.current.focus({ preventScroll: true });
+  }, [isRouteSectionOpen]);
+
   return (
     <div className="h-screen flex flex-col bg-stone-50 dark:bg-zinc-950">
       <header className="px-6 pt-10 pb-2 flex justify-between items-center z-10 shrink-0">
@@ -41,12 +57,17 @@ export const MapPage = () => {
           <button
             type="button"
             onClick={handleBack}
-            className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center shadow-sm shrink-0"
+            className="w-11 h-11 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center shadow-sm shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             aria-label="Back"
           >
             <ChevronLeft className="dark:text-white" />
           </button>
-          <h1 className="text-2xl font-bold dark:text-white truncate">
+          <h1
+            ref={headingRef}
+            data-page-heading
+            tabIndex={-1}
+            className="text-2xl font-bold dark:text-white truncate"
+          >
             {isRouteSectionOpen ? 'Route guidance' : 'Live venue map'}
           </h1>
         </div>
@@ -54,24 +75,29 @@ export const MapPage = () => {
           <button
             type="button"
             onClick={() => signOut()}
-            className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-2 py-2 whitespace-nowrap"
+            className="min-h-11 min-w-11 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 px-2 py-2 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             Sign out
           </button>
-          <button type="button" className="p-2" aria-label="Search">
+          <button
+            type="button"
+            className="min-h-11 min-w-11 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 rounded-lg"
+            aria-label="Search"
+          >
             <Search className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <main id="main-content" className="flex-1 min-h-0 overflow-y-auto" aria-label="Map content">
         {!isRouteSectionOpen && (
           <div className="px-6 py-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0 z-10">
             {['density', 'food', 'restrooms', 'exits'].map((f) => (
               <button
                 key={f}
+                type="button"
                 onClick={() => toggleFilter(f)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-all duration-300 ${filters[f] ? 'bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200' : 'bg-white text-gray-600 border border-gray-200 dark:bg-zinc-900 dark:text-gray-400 dark:border-zinc-800 shadow-sm'}`}
+                className={`min-h-11 px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${filters[f] ? 'bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200' : 'bg-white text-gray-600 border border-gray-200 dark:bg-zinc-900 dark:text-gray-400 dark:border-zinc-800 shadow-sm'}`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
@@ -105,7 +131,7 @@ export const MapPage = () => {
           />
         </div>
         <p className="px-4 -mt-1 mb-1 text-center text-[11px] text-gray-500 dark:text-gray-400 shrink-0">
-          Ctrl + scroll to zoom map
+          Keyboard: arrow keys pan, + / - zoom, 0 reset. Ctrl + scroll also zooms.
         </p>
 
         {isRouteSectionOpen ? (
@@ -169,15 +195,15 @@ export const MapPage = () => {
           <>
             <div className="px-6 shrink-0 flex gap-4 justify-center items-center text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#9FE1CB]" />
+                <span className="w-3 h-3 rounded-full" style={{ background: COMFORT_STATUS_COLORS.low }} />
                 Low
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#FAC775]" />
+                <span className="w-3 h-3 rounded-full" style={{ background: COMFORT_STATUS_COLORS.moderate }} />
                 Medium
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#F09595]" />
+                <span className="w-3 h-3 rounded-full" style={{ background: COMFORT_STATUS_COLORS.high }} />
                 High
               </div>
               <div className="flex items-center gap-1.5">
@@ -212,7 +238,7 @@ export const MapPage = () => {
                 type="button"
                 onClick={handleFastestFoodRoute}
                 disabled={routingBusy}
-                className="w-full rounded-2xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 px-4 py-3 flex items-center justify-between disabled:opacity-60"
+                className="w-full min-h-11 rounded-2xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 px-4 py-3 flex items-center justify-between disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 <div className="text-left">
                   <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
@@ -229,7 +255,26 @@ export const MapPage = () => {
             </div>
           </>
         )}
-      </div>
+        <section
+          className="mx-6 mb-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+          aria-labelledby="map-summary-heading"
+        >
+          <h2 id="map-summary-heading" className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Map summary
+          </h2>
+          <p className="mt-1">
+            Quietest zone: {quietestZone.name}. Current density: {quietestZone.density}%.
+            Fastest nearby stand: {fastestFood.name} with about {fastestFood.waitTime} minute wait.
+          </p>
+          {isRouteSectionOpen && selectedRoute ? (
+            <p className="mt-1">
+              Active route {selectedRoute.id} to {navigationState.destinationLabel}, ETA{' '}
+              {formatEta(selectedRoute.etaSeconds)}.
+            </p>
+          ) : null}
+        </section>
+        <p ref={liveRegionRef} className="sr-only" role="status" aria-live="polite" aria-atomic="true" />
+      </main>
 
       <BottomNav />
     </div>

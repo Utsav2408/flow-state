@@ -141,6 +141,12 @@ export function ZoneStatusSection({ zones }) {
               <span className="w-12 shrink-0 text-[11px] text-slate-600">{zoneGroup}</span>
               <div className="h-1.5 flex-1 overflow-hidden rounded bg-slate-200">
                 <div
+                  role="progressbar"
+                  aria-label={`${zoneGroup} density`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={density}
+                  aria-valuetext={`${density}% density in ${zoneGroup}`}
                   style={{
                     width: `${density}%`,
                     height: '100%',

@@ -43,6 +43,10 @@ export const useStore = create((set) => ({
   clearActiveRoute: () => set({ activeRoute: null }),
 
   initMockData: async () => {
+    if (import.meta.env.PROD) {
+      console.error('initMockData blocked: production build detected.');
+      return;
+    }
     if (import.meta.env.VITE_SEED_DATABASE !== 'true') return;
     await populateInitialData();
   },

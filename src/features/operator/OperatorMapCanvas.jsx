@@ -428,7 +428,7 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
             type="button"
             aria-label="Zoom in"
             onClick={handleZoomIn}
-            className="h-8 w-8 rounded-md border border-slate-300 bg-white text-[18px] font-medium leading-none text-slate-700 transition-colors hover:bg-slate-100"
+            className="h-11 w-11 rounded-md border border-slate-300 bg-white text-[18px] font-medium leading-none text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             +
           </button>
@@ -436,7 +436,7 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
             type="button"
             aria-label="Zoom out"
             onClick={handleZoomOut}
-            className="h-8 w-8 rounded-md border border-slate-300 bg-white text-[18px] font-medium leading-none text-slate-700 transition-colors hover:bg-slate-100"
+            className="h-11 w-11 rounded-md border border-slate-300 bg-white text-[18px] font-medium leading-none text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             -
           </button>
@@ -447,7 +447,7 @@ export const OperatorMapCanvas = ({ zones, stands, matchPhase }) => {
         <button
           type="button"
           onClick={resetView}
-          className="rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600"
+          className="min-h-11 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
         >
           Reset view
         </button>

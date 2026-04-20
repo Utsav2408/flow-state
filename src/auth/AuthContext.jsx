@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { auth, db, googleProvider, ref, onValue } from '../firebase';
 import { AuthContext } from './context.js';
+import { trackEvent } from '../services/analyticsService';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -65,22 +66,41 @@ export function AuthProvider({ children }) {
 
   const signInGoogle = useCallback(async () => {
     if (!auth) throw new Error('Firebase Auth is not configured.');
-    await signInWithPopup(auth, googleProvider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      trackEvent('login', { method: 'google' });
+    } catch (error) {
+      trackEvent('login_failed', { method: 'google' });
+      throw error;
+    }
   }, []);
 
   const signInEmail = useCallback(async (email, password) => {
     if (!auth) throw new Error('Firebase Auth is not configured.');
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      trackEvent('login', { method: 'email' });
+    } catch (error) {
+      trackEvent('login_failed', { method: 'email' });
+      throw error;
+    }
   }, []);
 
   const signUpEmail = useCallback(async (email, password) => {
     if (!auth) throw new Error('Firebase Auth is not configured.');
-    await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      trackEvent('sign_up', { method: 'email' });
+    } catch (error) {
+      trackEvent('sign_up_failed', { method: 'email' });
+      throw error;
+    }
   }, []);
 
   const signOut = useCallback(async () => {
     if (!auth) return;
     await firebaseSignOut(auth);
+    trackEvent('logout');
   }, []);
 
   const loading = !authReady || (!!user && !roleReady);

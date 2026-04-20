@@ -66,18 +66,20 @@ export const LoginPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+      <main id="main-content" className="min-h-screen flex items-center justify-center bg-slate-100">
         <div className="h-8 w-8 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin" />
-      </div>
+      </main>
     );
   }
 
   if (!firebaseConfigured) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
+      <main id="main-content" className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
           <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-slate-900">Firebase not configured</h1>
+          <h1 data-page-heading className="text-xl font-bold text-slate-900">
+            Firebase not configured
+          </h1>
           <p className="text-slate-600 text-sm mt-2">
             Copy <code className="bg-slate-100 px-1 rounded">.env.example</code> to{' '}
             <code className="bg-slate-100 px-1 rounded">.env</code> and add your project keys from the Firebase
@@ -87,12 +89,16 @@ export const LoginPage = () => {
             Add valid keys in <code className="bg-slate-100 px-1 rounded">.env</code>, then reload this page.
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-6 py-12 font-sans">
+    <main
+      id="main-content"
+      className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-6 py-12 font-sans"
+      aria-label="Login content"
+    >
       <div className="w-full max-w-[400px]">
         <div className="flex items-center justify-center gap-2 mb-10 text-white">
           <Activity className="w-8 h-8 text-sky-400" strokeWidth={2.5} />
@@ -100,13 +106,19 @@ export const LoginPage = () => {
         </div>
 
         <div className="bg-white rounded-3xl shadow-2xl p-8 border border-slate-200/80">
-          <h1 className="text-xl font-bold text-slate-900 text-center">Sign in to FlowState</h1>
+          <h1 data-page-heading className="text-xl font-bold text-slate-900 text-center">
+            Sign in to FlowState
+          </h1>
           <p className="text-sm text-slate-500 text-center mt-1 mb-8">
             Use Google or email to access the venue app. Operator dashboard requires an admin role in Firebase.
           </p>
 
           {error && (
-            <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+            <div
+              id="login-error"
+              role="alert"
+              className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"
+            >
               {error}
             </div>
           )}
@@ -170,13 +182,18 @@ export const LoginPage = () => {
 
           <form onSubmit={handleEmail} className="space-y-4">
             <label className="block">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</span>
+              <span id="email-label" className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                Email
+              </span>
               <div className="mt-1 relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="email"
                   autoComplete="email"
                   required
+                  aria-labelledby="email-label"
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'login-error' : undefined}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-shadow"
@@ -185,7 +202,9 @@ export const LoginPage = () => {
               </div>
             </label>
             <label className="block">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Password</span>
+              <span id="password-label" className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                Password
+              </span>
               <div className="mt-1 relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -193,6 +212,9 @@ export const LoginPage = () => {
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                   required
                   minLength={6}
+                  aria-labelledby="password-label"
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? 'login-error' : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-shadow"
@@ -215,6 +237,6 @@ export const LoginPage = () => {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 };

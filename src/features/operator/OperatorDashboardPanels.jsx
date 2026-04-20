@@ -61,6 +61,21 @@ export function OperatorDashboardLeftColumn({
   stands,
   allAlerts,
 }) {
+  const zoneDensityPairs =
+    zones instanceof Map
+      ? Array.from(zones.entries())
+          .filter(([, info]) => typeof info?.density === 'number')
+          .sort((a, b) => b[1].density - a[1].density)
+          .slice(0, 3)
+      : [];
+  const topWaitStands =
+    stands instanceof Map
+      ? Array.from(stands.entries())
+          .filter(([, info]) => typeof info?.waitTime === 'number')
+          .sort((a, b) => b[1].waitTime - a[1].waitTime)
+          .slice(0, 2)
+      : [];
+
   return (
     <div className="flex min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto px-5 pb-5 pt-5">
       <div className="grid grid-cols-4 gap-3">
@@ -96,9 +111,9 @@ export function OperatorDashboardLeftColumn({
             <span className="text-xs font-bold uppercase tracking-[0.07em] text-slate-500">Venue Heatmap</span>
             <div className="flex gap-3">
               {[
-                { color: COMFORT_STATUS_COLORS.low, label: '<40%' },
-                { color: COMFORT_STATUS_COLORS.moderate, label: '40-70%' },
-                { color: COMFORT_STATUS_COLORS.high, label: '>70%' },
+                { color: COMFORT_STATUS_COLORS.low, label: 'Low <40%' },
+                { color: COMFORT_STATUS_COLORS.moderate, label: 'Moderate 40-70%' },
+                { color: COMFORT_STATUS_COLORS.high, label: 'High >70%' },
               ].map((l) => (
                 <div key={l.label} className="flex items-center gap-1">
                   <span
@@ -115,6 +130,20 @@ export function OperatorDashboardLeftColumn({
           <div className="relative min-h-0 flex-1">
             <OperatorMapCanvas zones={zones} stands={stands} matchPhase={matchPhase} />
           </div>
+          <section className="sr-only" aria-label="Operator map textual summary">
+            <p>
+              Top congestion zones:{' '}
+              {zoneDensityPairs.length
+                ? zoneDensityPairs.map(([zoneName, info]) => `${zoneName} at ${info.density}%`).join(', ')
+                : 'No live density data available.'}
+            </p>
+            <p>
+              Highest stand waits:{' '}
+              {topWaitStands.length
+                ? topWaitStands.map(([standName, info]) => `${standName} at ${info.waitTime} minutes`).join(', ')
+                : 'No live stand wait data available.'}
+            </p>
+          </section>
         </div>
 
         <div className="flex h-full min-h-[500px] min-w-0 max-h-[500px] flex-col overflow-hidden rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_6px_rgba(0,0,0,0.07)]">

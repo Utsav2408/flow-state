@@ -45,7 +45,7 @@ Instead of pushing fans away from crowded areas, the system pulls them toward em
 When the match ends, every fan gets a personalized exit plan: countdown timer, gate assignment, staggered departure wave, and a wait incentive ("Free coffee if you leave 3 min later — skip 78% of congestion"). Groups exit together.
 
 **AI-Powered Recommendations**
-Gemini Flash generates natural-language action recommendations based on live conditions ("Grab food now — Stand 12 has a 1 min wait and your route is clear").
+The AI layer generates natural-language action recommendations based on live conditions ("Grab food now — Stand 12 has a 1 min wait and your route is clear") without exposing private API keys in the browser.
 
 ### 📊 For Operators
 
@@ -71,7 +71,7 @@ Firebase Authentication (Google + email/password) with fan/admin roles. Only adm
 | State Management | Zustand |
 | Backend | Firebase Realtime Database |
 | Auth | Firebase Authentication (Google OAuth + Email/Password) |
-| AI | Gemini 2.0 Flash (`generateContent`) |
+| AI | Rule-based client fallback + server-side Gemini ready path |
 | Map Rendering | HTML5 Canvas API (HiDPI/Retina support) |
 | Routing Algorithm | Dijkstra + Nash-equilibrium batch distribution |
 | Testing | Vitest + Testing Library + jsdom |
@@ -155,7 +155,7 @@ flow-state/
 ### Prerequisites
 - Node.js 20+ (recommended; CI runs Node 22)
 - A Firebase project with Realtime Database + Authentication enabled
-- A Gemini API key ([get one free](https://aistudio.google.com/apikey))
+- Optional (backend-only): a Gemini API key for Cloud Functions/server inference.
 
 ### Installation
 
@@ -183,11 +183,18 @@ VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_GEMINI_API_KEY=your_gemini_api_key
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+VITE_RECAPTCHA_V3_SITE_KEY=your_recaptcha_v3_site_key
 VITE_SEED_DATABASE=false
 ```
 
 `VITE_SEED_DATABASE=true` performs a **destructive** one-time seed of simulation paths (`simulation`, `zones`, `stands`, `alerts`) and should only be enabled intentionally.
+
+`VITE_FIREBASE_MEASUREMENT_ID` is optional for analytics.
+`VITE_RECAPTCHA_V3_SITE_KEY` is required in production for Firebase App Check hardening:
+- Measurement ID enables Firebase Analytics event logging.
+- reCAPTCHA v3 site key enables Firebase App Check for web abuse protection.
+- Do not place Gemini (or any private API) keys in `VITE_*` variables because they are public in browser bundles.
 
 ### Run Locally
 
@@ -260,7 +267,7 @@ Fans are divided into waves by zone proximity to gates. Departure times are stag
 | Comfort scoring | Fully functional | Add temperature, weather |
 | Group sync | Hardcoded demo group | Real user accounts + friends |
 | Egress choreography | Functional with sim data | Same logic, real gate sensors |
-| Gemini recommendations | Live API calls | Same, add personalization |
+| Gemini recommendations | Secure local fallback in client | Move LLM calls to Cloud Functions / backend |
 
 The architecture is designed so that swapping the simulation for real sensor data requires zero changes to the intelligence layer.
 
@@ -272,6 +279,15 @@ The architecture is designed so that swapping the simulation for real sensor dat
 - `ProtectedOperator` additionally checks admin role (`userRoles/{uid} === "admin"` in Firebase RTDB).
 - Login supports both Google OAuth and email/password.
 - If Firebase env vars are missing, login shows a setup screen instead of failing silently.
+
+---
+
+## Google Services Hardening (No Billing Required)
+
+- **Firebase App Check (Web)**: enforced in production via `VITE_RECAPTCHA_V3_SITE_KEY` in `src/firebase.js`.
+- **Firebase Analytics**: optional integration via `VITE_FIREBASE_MEASUREMENT_ID` with app event tracking (`screen_view`, `login`, `route_requested`, `offer_claimed`, `ai_recommendation_shown`).
+- **Seed safety guardrails**: production builds fail when `VITE_SEED_DATABASE=true` and runtime seeding is blocked in production.
+- **Realtime Database Rules**: authenticated reads + admin-only writes + schema validation for `zones`, `stands`, `simulation`, and `alerts`.
 
 ---
 

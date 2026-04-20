@@ -7,6 +7,8 @@ import { GATE_BY_ID } from '../../models/venueLayout';
 import { DoorOpen, Clock3, CarFront, Coffee, Check, Sparkles } from 'lucide-react';
 import { getSimStats } from '../../simulation/crowdSimulator';
 import { generateEgressTip } from '../../services/geminiService';
+import { trackEvent } from '../../services/analyticsService';
+import { usePrefersReducedMotion } from '../../utils/usePrefersReducedMotion';
 
 const GROUP_MEMBERS = [
   { id: 'You', name: 'You', initials: 'You', color: 'bg-blue-100 text-blue-700' },
@@ -35,6 +37,7 @@ export function EgressPage() {
   const [simStats, setSimStats] = useState(() => getSimStats());
   const [aiTip, setAiTip] = useState('');
   const requestedTipRef = useRef(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const plan = useMemo(
     () => getEgressPlan(currentFan?.id || 'fan-1', { zoneId: currentFan?.location }),
@@ -82,6 +85,10 @@ export function EgressPage() {
         if (!isMounted) return;
         const trimmed = typeof text === 'string' ? text.trim() : '';
         setAiTip(trimmed || fallbackTip);
+        trackEvent('ai_recommendation_shown', {
+          context: 'egress',
+          gate: myGate,
+        });
       })
       .catch(() => {
         if (!isMounted) return;
@@ -99,15 +106,22 @@ export function EgressPage() {
     if (claimed) return;
     setClaimed(true);
     setToast({ message: 'Free coffee voucher added! Show this at Stand 5', type: 'success' });
+    trackEvent('offer_claimed', {
+      offer_type: 'egress_coffee',
+      gate: myGate,
+    });
   };
 
   return (
     <div className="min-h-screen bg-stone-50 px-5 pt-10 pb-3 font-sans flex flex-col">
       <header className="mb-5">
-        <h1 className="text-[30px] leading-tight font-extrabold text-gray-900">Match ended - RCB won!</h1>
+        <h1 data-page-heading className="text-[30px] leading-tight font-extrabold text-gray-900">
+          Match ended - RCB won!
+        </h1>
         <p className="text-sm text-gray-600 font-medium mt-1">Your personalized exit plan is ready</p>
       </header>
 
+      <main id="main-content" aria-label="Egress content">
       <section className="flex flex-col items-center mb-5">
         <div className="relative w-[120px] h-[120px]">
           <svg className="w-[120px] h-[120px] -rotate-90" viewBox="0 0 120 120" aria-hidden>
@@ -122,7 +136,7 @@ export function EgressPage() {
               strokeLinecap="round"
               strokeDasharray={ringCircumference}
               strokeDashoffset={ringDashOffset}
-              className="transition-[stroke-dashoffset] duration-500 ease-linear"
+              className={prefersReducedMotion ? '' : 'transition-[stroke-dashoffset] duration-500 ease-linear'}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -130,7 +144,15 @@ export function EgressPage() {
             <p className="text-sm text-gray-500 font-medium mt-1">minutes</p>
           </div>
         </div>
-        <p className={`mt-4 text-center font-semibold ${isGoNow ? 'text-emerald-700 animate-pulse' : 'text-emerald-700'}`}>
+        <p
+          className={`mt-4 text-center font-semibold ${
+            isGoNow
+              ? prefersReducedMotion
+                ? 'text-emerald-700'
+                : 'text-emerald-700 motion-safe:animate-pulse'
+              : 'text-emerald-700'
+          }`}
+        >
           {isGoNow ? `Go now! Head to ${myGate}` : 'Your optimal exit window opens soon'}
         </p>
       </section>
@@ -227,13 +249,25 @@ export function EgressPage() {
           <span>Venue exit progress</span>
           <span>{departedPct}% departed</span>
         </div>
-        <div className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
+        <div
+          className="h-2.5 rounded-full bg-gray-200 overflow-hidden"
+          role="progressbar"
+          aria-label="Venue exit progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.min(100, Math.max(0, departedPct))}
+          aria-valuetext={`${Math.min(100, Math.max(0, departedPct))}% departed`}
+        >
           <div
             className="h-full bg-emerald-500 transition-[width] duration-700 ease-out rounded-full"
             style={{ width: `${Math.min(100, Math.max(0, departedPct))}%` }}
           />
         </div>
       </section>
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        Exit gate {myGate}. {departedPct} percent of spectators have departed.
+      </p>
+      </main>
 
       <BottomNav />
 

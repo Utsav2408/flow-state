@@ -364,7 +364,7 @@ export const VenueMapCanvas = ({
           <button
             type="button"
             aria-label="Zoom in"
-            className="w-10 h-10 flex items-center justify-center text-lg font-bold leading-none text-gray-800 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-100 dark:hover:bg-zinc-800"
+            className="w-11 h-11 flex items-center justify-center text-lg font-bold leading-none text-gray-800 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-100 dark:hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             onClick={() => bumpZoom('in')}
           >
             +
@@ -372,7 +372,7 @@ export const VenueMapCanvas = ({
           <button
             type="button"
             aria-label="Zoom out"
-            className="w-10 h-10 flex items-center justify-center text-lg font-bold leading-none text-gray-800 border-t border-gray-200 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className="w-11 h-11 flex items-center justify-center text-lg font-bold leading-none text-gray-800 border-t border-gray-200 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-100 dark:border-zinc-700 dark:hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             onClick={() => bumpZoom('out')}
           >
             −

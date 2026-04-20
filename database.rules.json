@@ -5,24 +5,35 @@
     "userRoles": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": false
+        ".write": false,
+        ".validate": "newData.isString() && (newData.val() === 'fan' || newData.val() === 'admin')"
       }
     },
     "zones": {
-      ".read": true,
-      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'",
+      "$zoneId": {
+        ".validate": "newData.exists() && newData.hasChildren(['density', 'name', 'capacity']) && newData.childrenCount() === 3 && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 40 && newData.child('density').isNumber() && newData.child('density').val() >= 0 && newData.child('density').val() <= 100 && newData.child('capacity').isNumber() && newData.child('capacity').val() >= 1 && newData.child('capacity').val() <= 100000"
+      }
     },
     "stands": {
-      ".read": true,
-      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'",
+      "$standId": {
+        ".validate": "newData.exists() && $standId.matches(/^S\\d{1,2}$/) && newData.hasChildren(['waitTime', 'name', 'position']) && newData.childrenCount() === 3 && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 40 && newData.child('waitTime').isNumber() && newData.child('waitTime').val() >= 0 && newData.child('waitTime').val() <= 120 && newData.child('position').hasChildren(['x', 'y']) && newData.child('position').childrenCount() === 2 && newData.child('position').child('x').isNumber() && newData.child('position').child('x').val() >= 0 && newData.child('position').child('x').val() <= 2000 && newData.child('position').child('y').isNumber() && newData.child('position').child('y').val() >= 0 && newData.child('position').child('y').val() <= 2000"
+      }
     },
     "simulation": {
-      ".read": true,
-      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'",
+      ".validate": "newData.exists() && newData.hasChildren(['clock', 'speed', 'state', 'halftimeCountdownSeconds']) && newData.child('clock').isString() && newData.child('clock').val().matches(/^([01]?\\d|2[0-3]):[0-5]\\d$/) && newData.child('speed').isNumber() && (newData.child('speed').val() === 1 || newData.child('speed').val() === 5 || newData.child('speed').val() === 20) && newData.child('state').isString() && newData.child('state').val().matches(/^(MATCH_IN_PROGRESS|HALFTIME|POST_MATCH|in_match|halftime|post_match|post-match)$/) && newData.child('halftimeCountdownSeconds').isNumber() && newData.child('halftimeCountdownSeconds').val() >= 0 && newData.child('halftimeCountdownSeconds').val() <= 7200 && (!newData.child('simTimeSecs').exists() || (newData.child('simTimeSecs').isNumber() && newData.child('simTimeSecs').val() >= 0)) && (!newData.child('postMatchElapsedSecs').exists() || (newData.child('postMatchElapsedSecs').isNumber() && newData.child('postMatchElapsedSecs').val() >= 0))"
     },
     "alerts": {
-      ".read": true,
-      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'"
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('userRoles').child(auth.uid).val() === 'admin'",
+      "$alertId": {
+        ".validate": "newData.exists() && newData.hasChildren(['message', 'severity', 'timestamp']) && newData.childrenCount() === 3 && newData.child('message').isString() && newData.child('message').val().length > 0 && newData.child('message').val().length <= 240 && newData.child('severity').isString() && (newData.child('severity').val() === 'low' || newData.child('severity').val() === 'medium' || newData.child('severity').val() === 'high') && newData.child('timestamp').isNumber() && newData.child('timestamp').val() >= 1700000000000"
+      }
     }
   }
 }

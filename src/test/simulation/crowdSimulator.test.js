@@ -97,4 +97,19 @@ describe('crowdSimulator', () => {
     expect(worker.postMessage).toHaveBeenCalledWith({ type: 'TRIGGER_EVENT', payload: 'goal' });
     expect(worker.postMessage).toHaveBeenCalledWith({ type: 'PAUSE' });
   });
+
+  it('wires speed subscription and reuses existing worker', async () => {
+    const sim = await import('../../simulation/crowdSimulator');
+
+    expect(sim.getSimStats().total).toBe(40000);
+    sim.startSimulation();
+    sim.startSimulation();
+    expect(MockWorker.instances).toHaveLength(1);
+
+    const worker = MockWorker.instances[0];
+    const subscriptionHandler = mockSubscribe.mock.calls[0][0];
+    subscriptionHandler({ simState: { speed: 20 } }, { simState: { speed: 1 } });
+
+    expect(worker.postMessage).toHaveBeenCalledWith({ type: 'SET_SPEED', payload: 20 });
+  });
 });

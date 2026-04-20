@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HomePage } from './features/home/HomePage';
 import { MapPage } from './features/map/MapPage';
 import { GroupPage } from './features/group/GroupPage';
@@ -10,6 +10,7 @@ import { ProtectedOperator } from './auth/ProtectedOperator';
 import { RequireAuth } from './auth/RequireAuth';
 import { FanAppBootstrap } from './app/FanAppBootstrap';
 import { EgressTransitionGate } from './features/egress/EgressTransitionGate';
+import { trackPageView } from './services/analyticsService';
 
 function FanShell() {
   return (
@@ -28,6 +29,29 @@ function FanShell() {
   );
 }
 
+function RouteFocusManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const preferredHeading =
+        document.querySelector('[data-page-heading]') || document.querySelector('main h1, h1');
+      if (!preferredHeading) return;
+      if (!preferredHeading.hasAttribute('tabindex')) {
+        preferredHeading.setAttribute('tabindex', '-1');
+      }
+      preferredHeading.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
+  return null;
+}
+
 function FanApp() {
   return (
     <RequireAuth>
@@ -41,6 +65,13 @@ function FanApp() {
 function App() {
   return (
     <BrowserRouter>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-900 focus:shadow-lg focus:ring-2 focus:ring-blue-600"
+      >
+        Skip to main content
+      </a>
+      <RouteFocusManager />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/operator" element={<ProtectedOperator />} />

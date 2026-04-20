@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getDatabase, ref, onValue, set, update } from 'firebase/database';
 import { ZONE_TARGETS } from './models/venueLayout';
@@ -11,6 +12,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? '',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: import.meta.env.VITE_FIREBASE_APP_ID ?? '',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID ?? '',
 };
 
 const canInit = Boolean(
@@ -19,16 +21,32 @@ const canInit = Boolean(
     firebaseConfig.databaseURL &&
     firebaseConfig.projectId
 );
+const isProductionBuild = import.meta.env.PROD;
 
 let app;
 let db;
 let auth;
+let appCheck = null;
 
 if (canInit) {
   try {
     app = initializeApp(firebaseConfig);
     db = getDatabase(app);
     auth = getAuth(app);
+
+    if (typeof window !== 'undefined') {
+      const appCheckSiteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
+      if (appCheckSiteKey) {
+        appCheck = initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(appCheckSiteKey),
+          isTokenAutoRefreshEnabled: true,
+        });
+      } else if (isProductionBuild) {
+        throw new Error(
+          'Security check failed: VITE_RECAPTCHA_V3_SITE_KEY is required in production for Firebase App Check.'
+        );
+      }
+    }
   } catch (e) {
     console.warn('Firebase init failed:', e);
   }
@@ -41,10 +59,19 @@ if (canInit) {
 export const googleProvider = new GoogleAuthProvider();
 
 export { db, auth, ref, onValue, set, update };
+export { appCheck };
 
 /** Destructive: overwrites simulation, zones, stands, alerts. Enable only via VITE_SEED_DATABASE=true */
 export async function populateInitialData() {
   if (!db) return;
+  if (isProductionBuild) {
+    console.error('populateInitialData blocked: production build detected.');
+    return;
+  }
+  if (import.meta.env.VITE_SEED_DATABASE !== 'true') {
+    console.warn('populateInitialData blocked: VITE_SEED_DATABASE is not enabled.');
+    return;
+  }
   await set(ref(db, 'simulation'), {
     clock: '19:30',
     speed: 1,

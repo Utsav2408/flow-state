@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getComfortColor } from '../../intelligence/comfortScoring';
 import { BottomNav } from '../../components/ui/BottomNav';
@@ -96,25 +96,36 @@ export const HomePage = () => {
     promoWalkMeters,
     timeLeft,
   } = useHomePageState(navigate);
+  const [liveUpdate, setLiveUpdate] = useState('');
+  const prevComfortRef = useRef(comfortScore);
+
+  useEffect(() => {
+    if (Math.abs(comfortScore - prevComfortRef.current) >= 5) {
+      setLiveUpdate(`Comfort score updated to ${comfortScore}. Crowd level is ${crowdLevel} percent.`);
+      prevComfortRef.current = comfortScore;
+    }
+  }, [comfortScore, crowdLevel]);
 
   return (
     <div className="h-screen bg-stone-50 font-sans flex flex-col">
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-12">
+      <main id="main-content" className="flex-1 min-h-0 overflow-y-auto px-5 pt-12" aria-label="Home content">
         {/* ── Header ─────────────────────────────────────────────────── */}
         <header className="flex justify-between items-start mb-6 gap-3">
           <div className="min-w-0">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">FlowState</h1>
+            <h1 data-page-heading className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              FlowState
+            </h1>
             <p className="text-sm text-gray-500 font-medium mt-0.5">RCB vs CSK — Chinnaswamy Stadium</p>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0 mt-1">
             <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-red-500 motion-safe:animate-pulse" />
               <span className="text-xs font-bold text-red-600">Live</span>
             </div>
             <button
               type="button"
               onClick={() => signOut()}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2"
+              className="min-h-11 min-w-11 text-xs font-semibold text-gray-500 hover:text-gray-800 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
               Sign out
             </button>
@@ -151,7 +162,7 @@ export const HomePage = () => {
                 className="w-full flex items-start gap-3 text-left cursor-pointer active:scale-[0.98] transition-transform rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50"
               >
                 <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
-                  <ArrowUp size={18} className={fallbackAction.iconColor} />
+                  <ArrowUp size={18} className={fallbackAction.iconColor} aria-hidden />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -159,7 +170,7 @@ export const HomePage = () => {
                       {fallbackAction.title}
                     </h3>
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
-                      <Sparkles size={10} />
+                      <Sparkles size={10} aria-hidden />
                       AI-powered
                     </span>
                   </div>
@@ -171,7 +182,7 @@ export const HomePage = () => {
             ) : (
               <>
                 <div className={`p-2 rounded-full ${fallbackAction.iconBg} mt-0.5`}>
-                  <ArrowUp size={18} className={fallbackAction.iconColor} />
+                  <ArrowUp size={18} className={fallbackAction.iconColor} aria-hidden />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -179,7 +190,7 @@ export const HomePage = () => {
                       {fallbackAction.title}
                     </h3>
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-100 px-2 py-1 rounded-full">
-                      <Sparkles size={10} />
+                      <Sparkles size={10} aria-hidden />
                       AI-powered
                     </span>
                   </div>
@@ -206,28 +217,28 @@ export const HomePage = () => {
         {/* ── Quick Nav ──────────────────────────────────────────────── */}
         <section className="grid grid-cols-4 gap-3 mb-6">
           <QuickNavBtn
-            icon={<Map size={22} />}
+            icon={<Map size={22} aria-hidden />}
             label="Map"
             onClick={() => navigate('/map')}
             bg="bg-blue-50"
             iconColor="text-blue-500"
           />
           <QuickNavBtn
-            icon={<UtensilsCrossed size={22} />}
+            icon={<UtensilsCrossed size={22} aria-hidden />}
             label="Food"
             onClick={() => navigate(`/map?dest=${encodeURIComponent(nearestFood.id !== '--' ? nearestFood.id : 'S12')}`)}
             bg="bg-red-50"
             iconColor="text-red-400"
           />
           <QuickNavBtn
-            icon={<Users size={22} />}
+            icon={<Users size={22} aria-hidden />}
             label="Group"
             onClick={() => navigate('/group')}
             bg="bg-orange-50"
             iconColor="text-orange-400"
           />
           <QuickNavBtn
-            icon={<Star size={22} />}
+            icon={<Star size={22} aria-hidden />}
             label="Rewards"
             onClick={() => navigate('/rewards')}
             bg="bg-amber-50"
@@ -269,7 +280,10 @@ export const HomePage = () => {
             </div>
           </div>
         </section>
-      </div>
+        <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {liveUpdate}
+        </p>
+      </main>
 
       <BottomNav />
     </div>

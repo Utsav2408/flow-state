@@ -1,27 +1,13 @@
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-async function askGemini(prompt) {
-  if (!GEMINI_API_KEY) return null;
-
-  try {
-    const res = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 150, temperature: 0.7 },
-      }),
-    });
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) {
-    console.error('Gemini error:', e);
-    return null;
-  }
+/**
+ * Security hardening:
+ * - Never call Gemini directly from browser code.
+ * - API keys in VITE_* vars are always public and visible in bundled JS.
+ * This local fallback keeps UX stable until a server-side function is wired.
+ */
+function safeStandName(standId) {
+  const text = String(standId ?? '').trim();
+  if (!text) return 'nearby stand';
+  return text.startsWith('S') ? `Stand ${text.slice(1)}` : `Stand ${text}`;
 }
 
 export async function generateActionRecommendation({
@@ -32,37 +18,46 @@ export async function generateActionRecommendation({
   crowdLevel,
   matchState,
 }) {
-  const prompt = `You are FlowState, an AI stadium assistant. Given this live data:
-- Fan's zone: ${zoneName} (comfort score: ${comfortScore}/100)
-- Nearest food stand: ${nearestStand} (wait: ${nearestWait} min)
-- Zone crowd level: ${crowdLevel}%
-- Match state: ${matchState}
+  const wait = Number(nearestWait);
+  const comfort = Number(comfortScore);
+  const crowd = Number(crowdLevel);
+  const state = String(matchState ?? '').toLowerCase();
+  const stand = safeStandName(nearestStand);
 
-Write a SHORT, friendly, actionable recommendation (max 2 sentences).
-If wait time is low, suggest grabbing food now.
-If comfort is below 50, suggest moving to a quieter section.
-If it's halftime, mention the rush is coming.
-If match just ended, mention the exit plan.
-Only return the recommendation text, nothing else.`;
+  if (state.includes('post')) {
+    return `Match just ended. Head toward your assigned gate now and avoid stopping en route from ${zoneName}.`;
+  }
 
-  return askGemini(prompt);
+  if (state.includes('half') && Number.isFinite(wait) && wait <= 5) {
+    return `Great window for food: ${stand} is around ${wait} min right now. Grab it before the halftime surge starts.`;
+  }
+
+  if (Number.isFinite(comfort) && comfort < 50) {
+    return `Your section is crowded at the moment. Move briefly to a quieter concourse, then re-enter once flow improves.`;
+  }
+
+  if (Number.isFinite(crowd) && crowd >= 70) {
+    return `Footfall around ${zoneName} is high. Use wider aisles and start movement a minute early to skip chokepoints.`;
+  }
+
+  if (Number.isFinite(wait) && wait <= 3) {
+    return `${stand} has a short line now. This is a good time to grab food without missing much action.`;
+  }
+
+  return 'You are in a stable zone right now. Stay put, and watch for the next low-wait food window.';
 }
 
 export async function generateEgressTip({
-  fanZone,
   assignedGate,
   wave,
   groupMembers,
   congestionSavings,
 }) {
-  const prompt = `You are FlowState, an AI stadium assistant helping a fan exit after the match. Context:
-- Fan is in zone: ${fanZone}
-- Assigned exit gate: ${assignedGate}
-- Departure wave: ${wave} (they should wait before leaving)
-- Group members: ${groupMembers.join(', ')} (most exiting via same gate)
-- Waiting saves: ${congestionSavings}% congestion avoided
+  const names = Array.isArray(groupMembers) ? groupMembers.filter(Boolean) : [];
+  const groupLine = names.length > 0 ? `with ${names.join(', ')}` : 'with your group';
+  const savings = Number.isFinite(Number(congestionSavings))
+    ? `${Math.max(0, Math.round(Number(congestionSavings)))}%`
+    : 'major';
 
-Write ONE short, encouraging, personalized tip (max 2 sentences) about their exit plan. Be specific about their gate and group. Make waiting feel like a smart choice, not a punishment. Only return the tip text.`;
-
-  return askGemini(prompt);
+  return `Exit via ${assignedGate} at ${wave} ${groupLine}. Waiting briefly is the smart move and can avoid about ${savings} congestion.`;
 }

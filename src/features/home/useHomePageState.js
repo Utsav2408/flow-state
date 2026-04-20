@@ -8,6 +8,7 @@ import {
 } from '../../intelligence/comfortScoring';
 import { getNashStats } from '../../intelligence/routingEngine';
 import { generateActionRecommendation } from '../../services/geminiService';
+import { trackEvent } from '../../services/analyticsService';
 import { estimateWalkMetersFromPathCost, getZoneAliasesForGroup } from '../../models/venueLayout';
 
 /**
@@ -181,7 +182,14 @@ export function useHomePageState(navigate) {
         .then((text) => {
           if (cancelled) return;
           const trimmed = typeof text === 'string' ? text.trim() : '';
-          if (trimmed) setAiRecommendation(trimmed);
+          if (trimmed) {
+            setAiRecommendation(trimmed);
+            trackEvent('ai_recommendation_shown', {
+              context: 'home',
+              match_state: matchState,
+              comfort_score: comfortScore,
+            });
+          }
         })
         .catch(() => {
           // Keep fallback recommendation visible; Gemini should never block UI.
@@ -202,6 +210,12 @@ export function useHomePageState(navigate) {
   const handleRouteRequest = async () => {
     const target = nearestFood.id && nearestFood.id !== '--' ? nearestFood.id : 'S12';
     setRouting(true);
+    trackEvent('route_requested', {
+      source: 'home',
+      destination: target,
+      comfort_score: comfortScore,
+      crowd_level: crowdLevel,
+    });
     navigate(`/map?dest=${encodeURIComponent(target)}`);
     setTimeout(() => setRouting(false), 250);
   };

@@ -10,16 +10,23 @@ export const RewardsPage = () => {
     <div className="min-h-screen bg-stone-50 font-sans flex flex-col">
       <header className="px-5 pt-12 pb-4 flex items-center justify-between shadow-sm bg-white/50 backdrop-blur-md sticky top-0 z-20">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform"
+          className="w-11 h-11 p-2 bg-gray-100 rounded-full text-gray-700 active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+          aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={20} aria-hidden />
         </button>
-        <h1 className="text-xl font-extrabold text-gray-900 absolute left-1/2 -translate-x-1/2">Rewards</h1>
+        <h1
+          data-page-heading
+          className="text-xl font-extrabold text-gray-900 absolute left-1/2 -translate-x-1/2"
+        >
+          Rewards
+        </h1>
         <div className="w-9" />
       </header>
 
-      <div className="px-5 pt-4">
+      <main id="main-content" className="px-5 pt-4" aria-label="Rewards content">
         {/* Points Card */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -37,7 +44,10 @@ export const RewardsPage = () => {
               </p>
             </div>
           </div>
-          <button className="bg-gray-100 text-gray-900 text-xs font-bold py-2 px-4 rounded-xl active:scale-95 transition-transform hover:bg-gray-200">
+          <button
+            type="button"
+            className="min-h-11 bg-gray-100 text-gray-900 text-xs font-bold py-2 px-4 rounded-xl active:scale-95 transition-transform hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+          >
             Redeem
           </button>
         </div>
@@ -46,7 +56,11 @@ export const RewardsPage = () => {
 
         <div className="space-y-3 mb-6">
           <OfferCard
-            icon={<span className="text-rose-500 text-lg">🎯</span>}
+            icon={
+              <span className="text-rose-500 text-lg" aria-hidden>
+                🎯
+              </span>
+            }
             title="2x points at Stand 12"
             desc="South concourse - almost empty right now. Any purchase qualifies."
             pts="+50 pts"
@@ -56,7 +70,7 @@ export const RewardsPage = () => {
             tagColor="text-rose-600 bg-rose-100"
           />
           <OfferCard
-            icon={<Map size={18} className="text-indigo-500" />}
+            icon={<Map size={18} className="text-indigo-500" aria-hidden />}
             title="Explore zone C1 AR experience"
             desc="Interactive player stats overlay. Scan the pitch from the south stand."
             pts="+30 pts"
@@ -66,7 +80,7 @@ export const RewardsPage = () => {
             tagColor="text-amber-600 bg-amber-100"
           />
           <OfferCard
-            icon={<UtensilsCrossed size={18} className="text-emerald-500" />}
+            icon={<UtensilsCrossed size={18} className="text-emerald-500" aria-hidden />}
             title="Off-peak restroom bonus"
             desc="Restroom block B has 0 queue. Use it now and earn points."
             pts="+15 pts"
@@ -81,7 +95,7 @@ export const RewardsPage = () => {
           <ActivityRow icon="•" color="text-emerald-500" title="Used Route A (cooperative routing)" pts="+15" />
           <ActivityRow icon="•" color="text-blue-500" title="Checked in at gate on time" pts="+80" />
         </div>
-      </div>
+      </main>
       <BottomNav />
     </div>
   );
@@ -104,7 +118,10 @@ const OfferCard = ({ icon, title, desc, pts, info, bg, tag, tagColor }) => (
         </p>
       </div>
       <div className="flex flex-col justify-center shrink-0">
-        <button className="bg-white border border-gray-200 text-gray-900 font-bold text-xs py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-transform hover:bg-gray-50">
+        <button
+          type="button"
+          className="min-h-11 bg-white border border-gray-200 text-gray-900 font-bold text-xs py-2 px-4 rounded-xl shadow-sm active:scale-95 transition-transform hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+        >
           Go
         </button>
       </div>
@@ -115,7 +132,9 @@ const OfferCard = ({ icon, title, desc, pts, info, bg, tag, tagColor }) => (
 const ActivityRow = ({ icon, color, title, pts }) => (
   <div className="flex items-center justify-between">
     <div className="flex items-center gap-2">
-      <span className={`text-xl -mt-0.5 ${color}`}>{icon}</span>
+      <span className={`text-xl -mt-0.5 ${color}`} aria-hidden>
+        {icon}
+      </span>
       <span className="text-xs font-medium text-gray-700">{title}</span>
     </div>
     <span className="text-xs font-bold text-emerald-600">{pts}</span>
